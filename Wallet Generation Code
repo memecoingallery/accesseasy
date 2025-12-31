@@ -1,0 +1,14 @@
+const keypair = solanaWeb3.Keypair.generate();
+
+const publicKey = keypair.publicKey.toBase58();
+const secretKey = Array.from(keypair.secretKey);
+
+alert(`
+SAVE THIS NOW – IT WILL NOT BE SHOWN AGAIN
+
+Public Key:
+${publicKey}
+
+Private Key:
+${secretKey.join(",")}
+`);
