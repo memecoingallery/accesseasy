@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>accesseasy — Events in deiner Nähe</title>
+  <link rel="stylesheet" href="./css/ui.css" />
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand">accesseasy</div>
+    <nav class="main-nav" role="navigation" aria-label="Hauptmenü">
+      <button id="menu-toggle" class="menu-btn" aria-expanded="false" aria-controls="menu">☰ Menü</button>
+      <ul id="menu" class="menu hidden" role="menu" aria-hidden="true">
+        <li role="none"><a role="menuitem" href="#" id="menu-home">Startseite</a></li>
+        <li role="none"><a role="menuitem" href="#" id="menu-events">Events</a></li>
+        <li role="none"><a role="menuitem" href="#" id="menu-about">Über</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container" role="main">
+    <section class="search-panel" aria-labelledby="search-title">
+      <h1 id="search-title">Finde Events in deiner Region</h1>
+
+      <form id="search-form" class="search-form" role="search" aria-label="Event-Suche">
+        <div class="search-row">
+          <label for="query" class="visually-hidden">Suche nach Eventnamen oder Schlagwort</label>
+          <input id="query" name="query" type="search" placeholder="Suche (z. B. Konzert, Meetup, NFT)" aria-label="Suche nach Event" />
+
+          <div class="controls">
+            <label for="radius" class="radius-label">Radius:</label>
+            <select id="radius" name="radius" aria-label="Suchradius">
+              <option value="5">5 km</option>
+              <option value="10" selected>10 km</option>
+              <option value="25">25 km</option>
+              <option value="50">50 km</option>
+            </select>
+
+            <button id="geo-btn" type="button" class="btn" title="Standort benutzen">📍 In meiner Nähe suchen</button>
+            <button id="search-btn" type="submit" class="btn primary">Suchen</button>
+          </div>
+        </div>
+
+        <div id="fallback-location" class="fallback hidden" aria-hidden="true">
+          <label for="city" class="small-label">Stadt / PLZ (falls Geolocation nicht möglich)</label>
+          <input id="city" name="city" type="text" placeholder="z. B. Berlin oder 10115" />
+          <button id="use-city" type="button" class="btn">Verwende Stadt / PLZ</button>
+        </div>
+      </form>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="results" class="results" aria-labelledby="results-title">
+      <h2 id="results-title">Ergebnisse</h2>
+      <ul id="events-list" class="events-list" aria-live="polite"></ul>
+    </section>
+  </main>
+
+  <template id="event-template">
+    <li class="event-card" role="article">
+      <div class="event-header">
+        <h3 class="event-title"></h3>
+        <div class="event-meta"></div>
+      </div>
+      <p class="event-description"></p>
+      <div class="event-actions">
+        <button class="btn view-btn">Details</button>
+        <button class="btn ticket-btn">Ticket</button>
+      </div>
+    </li>
+  </template>
+
+  <footer class="site-footer" role="contentinfo">
+    <small>© accesseasy</small>
+  </footer>
+
+  <script type="module" src="./js/search.js"></script>
+</body>
+</html>
