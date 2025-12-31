@@ -16,6 +16,7 @@
       --text: #e5e7eb;
       --muted: #9ca3af;
       --border: #1f2937;
+      --topbar-bg: #071018;
     }
 
     * {
@@ -31,8 +32,92 @@
       line-height: 1.6;
     }
 
+    /* Topbar with social icons */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: var(--topbar-bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      padding: 0 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      z-index: 999;
+    }
+
+    .social {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.03);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255,255,255,0.02);
+      transform: translateY(-1px);
+    }
+
+    /* Dropdown container */
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 48px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      min-width: 240px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+
+    .dropdown-menu a {
+      display: block;
+      padding: 0.6rem 0.9rem;
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255,255,255,0.02);
+      font-size: 0.95rem;
+    }
+
+    .dropdown-menu a:last-child { border-bottom: none; }
+
+    .dropdown-menu a:hover {
+      background: rgba(255,255,255,0.02);
+      color: #fff;
+    }
+
+    .dropdown.open .dropdown-menu { display: block; }
+
+    /* push page content down to avoid overlap with fixed topbar */
+    main, header, footer { padding-top: 16px; }
+    .page-container { padding-top: 72px; }
+
+    /* existing site styles */
     header {
-      padding: 3rem 1.5rem;
+      padding: 2rem 1.5rem;
       text-align: center;
       border-bottom: 1px solid var(--border);
     }
@@ -81,8 +166,6 @@
       text-align: center;
     }
 
-    /* Button and link styles for the call-to-action */
-    .cta button,
     .cta .button {
       background: var(--accent);
       color: #000;
@@ -96,7 +179,6 @@
       display: inline-block;
     }
 
-    .cta button:hover,
     .cta .button:hover {
       opacity: 0.9;
     }
@@ -123,77 +205,174 @@
 </head>
 
 <body>
-
-  <header>
-    <h1>Decentralized Event Ticket Payments</h1>
-    <p>
-      A Solana-based utility payment layer for the event industry.
-      Hosts generate tickets. Guests pay in crypto. No custodial wallets. No fiat handling.
-    </p>
-  </header>
-
-  <main>
-
-    <section class="grid">
-      <div class="card">
-        <h3>For Event Hosts</h3>
-        <p>
-          Generate ticket batches by defining quantity, price, date and location.
-          Pay generation fees using utility tokens or stablecoins.
-          Receive funds directly to your non-custodial Solana wallet.
-        </p>
-      </div>
-
-      <div class="card">
-        <h3>For Guests</h3>
-        <p>
-          Pay securely via Solana Pay QR code or your preferred wallet.
-          Receive a payment confirmation and receipt via email.
-          Tickets are delivered separately by the event host.
-        </p>
-      </div>
-
-      <div class="card">
-        <h3>Payment Assets</h3>
-        <p>
-          Supported assets include community-driven utility tokens and
-          EURC or USDC stablecoins, depending on the event region.
-          Live SOL price conversion is applied at checkout.
-        </p>
-      </div>
-
-      <div class="card">
-        <h3>Compliance & Privacy</h3>
-        <p>
-          GDPR-aware by design. Minimal data collection.
-          No KYC. No wallet custody. Email data is used solely for payment confirmation.
-        </p>
-      </div>
-    </section>
-
-    <div class="cta">
-      <a id="host-dashboard" class="button" href="/dashboard">
-        Host Dashboard (Coming Soon)
+  <!-- Topbar -->
+  <div class="topbar" role="navigation" aria-label="Top social bar">
+    <div class="social">
+      <!-- GitHub -->
+      <a class="icon-btn" href="https://github.com/accesseasy" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 .5a12 12 0 00-3.8 23.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.6-4-1.6-.5-1.2-1.2-1.5-1.2-1.5-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 .1 1.5-.8 1.5-.8.9-1.6 2.3-1.1 2.9-.9.1-.7.4-1.1.7-1.4-2.6-.3-5.3-1.3-5.3-5.9 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.6.1-3.3 0 0 1-.3 3.3 1.2a11.4 11.4 0 016 0C17 4 18 4.3 18 4.3c.6 1.7.2 3 .1 3.3.8.9 1.2 2 1.2 3.2 0 4.6-2.7 5.6-5.3 5.9.4.3.8.9.8 1.9v2.8c0 .3.2.6.8.5A12 12 0 0012 .5z"/>
+        </svg>
       </a>
-      <div class="disclaimer">
-        This platform does not issue tickets and does not hold user funds.
-        Smart contract settlement occurs directly on the Solana blockchain.
+
+      <!-- X -->
+      <a class="icon-btn" href="https://x.com/vntlayer" target="_blank" rel="noopener noreferrer" aria-label="X">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M22.46 6c-.77.35-1.5.6-2.28.72.82-.5 1.43-1.28 1.72-2.22-.77.46-1.62.8-2.52.98A4.1 4.1 0 0016.1 4c-2.27 0-4.11 1.87-4.11 4.18 0 .33.03.66.11.97C8.28 9.02 5.11 7.13 3.02 4.47c-.36.63-.57 1.36-.57 2.15 0 1.48.73 2.78 1.85 3.54-.68 0-1.32-.2-1.88-.5v.05c0 2.07 1.45 3.8 3.37 4.2-.36.1-.74.15-1.13.15-.28 0-.55-.03-.82-.06.56 1.8 2.16 3.12 4.06 3.16-1.48 1.22-3.35 1.95-5.38 1.95-.35 0-.7-.02-1.04-.06 1.93 1.25 4.22 1.98 6.69 1.98 8.03 0 12.43-6.63 12.43-12.38v-.56C21.1 7.6 21.85 6.85 22.46 6z"/>
+        </svg>
+      </a>
+
+      <!-- Telegram dropdown -->
+      <div class="dropdown" id="telegram-dropdown">
+        <button class="icon-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="telegram-menu" title="Telegram">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M22 3L2 10.5 7.5 13l2.6-1.2L21 4.3 22 3zM8.4 14.5l-2.9 1.1 1 4c.1.4.5.7 1 .6l2.7-.9 3.4 2c.4.2.9.1 1.2-.2.2-.2.3-.5.2-.8l-1.1-5.3L8.4 14.5z"/>
+          </svg>
+        </button>
+        <div class="dropdown-menu" id="telegram-menu" role="menu" aria-label="Telegram links">
+          <a href="https://t.me/NWO_sol_token_official" target="_blank" rel="noopener noreferrer" role="menuitem">Night Watching Owl (NWO) — Telegram</a>
+          <a href="https://t.me/DESPERADO_Solana" target="_blank" rel="noopener noreferrer" role="menuitem">DESPERADO — Telegram</a>
+        </div>
       </div>
-    </div>
 
-  </main>
+      <!-- PumpFun dropdown -->
+      <div class="dropdown" id="pumpfun-dropdown">
+        <button class="icon-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="pumpfun-menu" title="PumpFun">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2c-1.1 0-2 .9-2 2 0 .3.1.6.2.8L6 9v5h5l3.2-4.2c.3.1.6.2.9.2 1.1 0 2-.9 2-2S13.1 2 12 2zM5 20v-3l3 3H5z"/>
+          </svg>
+        </button>
+        <div class="dropdown-menu" id="pumpfun-menu" role="menu" aria-label="PumpFun links">
+          <a href="https://pump.fun/coin/HBpx1KCMhqsB5yKrZTqX747EPGTdfm8LJeUgNsbGpump" target="_blank" rel="noopener noreferrer" role="menuitem">Night Watching Owl — PumpFun</a>
+          <a href="https://pump.fun/coin/FLdtFf57DbhPWZkz2HnEd4e9PRX7enFWQq7uPDDspump" target="_blank" rel="noopener noreferrer" role="menuitem">DESPERADO — PumpFun</a>
+        </div>
+      </div>
 
-  <footer>
-    <div>
-      © 2025 – Decentralized Event Payments
     </div>
-    <div class="disclaimer">
-      This website is a non-custodial software interface. No financial advice is provided.
-      By using this service you acknowledge blockchain transaction risks.
-      <br/>
-      <a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a>
-    </div>
-  </footer>
+  </div>
 
+  <div class="page-container">
+    <header>
+      <h1>Decentralized Event Ticket Payments</h1>
+      <p>
+        A Solana-based utility payment layer for the event industry.
+        Hosts generate tickets. Guests pay in crypto. No custodial wallets. No fiat handling.
+      </p>
+    </header>
+
+    <main>
+      <section class="grid">
+        <div class="card">
+          <h3>For Event Hosts</h3>
+          <p>
+            Generate ticket batches by defining quantity, price, date and location.
+            Pay generation fees using utility tokens or stablecoins.
+            Receive funds directly to your non-custodial Solana wallet.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>For Guests</h3>
+          <p>
+            Pay securely via Solana Pay QR code or your preferred wallet.
+            Receive a payment confirmation and receipt via email.
+            Tickets are delivered separately by the event host.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>Payment Assets</h3>
+          <p>
+            Supported assets include community-driven utility tokens and
+            EURC or USDC stablecoins, depending on the event region.
+            Live SOL price conversion is applied at checkout.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>Compliance & Privacy</h3>
+          <p>
+            GDPR-aware by design. Minimal data collection.
+            No KYC. No wallet custody. Email data is used solely for payment confirmation.
+          </p>
+        </div>
+      </section>
+
+      <div class="cta">
+        <a id="host-dashboard" class="button" href="/dashboard">
+          Host Dashboard (Coming Soon)
+        </a>
+        <div class="disclaimer">
+          This platform does not issue tickets and does not hold user funds.
+          Smart contract settlement occurs directly on the Solana blockchain.
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div>
+        © 2025 – Decentralized Event Payments
+      </div>
+      <div class="disclaimer">
+        This website is a non-custodial software interface. No financial advice is provided.
+        By using this service you acknowledge blockchain transaction risks.
+        <br/>
+        <a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Dropdown toggles and outside click close
+    document.addEventListener('click', function (e) {
+      const telegramRoot = document.getElementById('telegram-dropdown');
+      const telegramBtn = telegramRoot.querySelector('button');
+      const pumpfunRoot = document.getElementById('pumpfun-dropdown');
+      const pumpfunBtn = pumpfunRoot.querySelector('button');
+
+      function closeAll() {
+        telegramRoot.classList.remove('open');
+        telegramBtn.setAttribute('aria-expanded', 'false');
+        pumpfunRoot.classList.remove('open');
+        pumpfunBtn.setAttribute('aria-expanded', 'false');
+      }
+
+      if (telegramBtn.contains(e.target)) {
+        e.preventDefault();
+        const isOpen = telegramRoot.classList.toggle('open');
+        telegramBtn.setAttribute('aria-expanded', String(isOpen));
+        pumpfunRoot.classList.remove('open');
+        pumpfunBtn.setAttribute('aria-expanded', 'false');
+        return;
+      }
+
+      if (pumpfunBtn.contains(e.target)) {
+        e.preventDefault();
+        const isOpen = pumpfunRoot.classList.toggle('open');
+        pumpfunBtn.setAttribute('aria-expanded', String(isOpen));
+        telegramRoot.classList.remove('open');
+        telegramBtn.setAttribute('aria-expanded', 'false');
+        return;
+      }
+
+      if (!telegramRoot.contains(e.target) && !pumpfunRoot.contains(e.target)) {
+        closeAll();
+      }
+    });
+
+    // Close dropdowns on Escape
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        const telegramRoot = document.getElementById('telegram-dropdown');
+        const pumpfunRoot = document.getElementById('pumpfun-dropdown');
+        const telegramBtn = telegramRoot.querySelector('button');
+        const pumpfunBtn = pumpfunRoot.querySelector('button');
+        telegramRoot.classList.remove('open');
+        telegramBtn.setAttribute('aria-expanded', 'false');
+        pumpfunRoot.classList.remove('open');
+        pumpfunBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  </script>
 </body>
 </html>
