@@ -1,0 +1,17 @@
+# Rust build artifacts
+backend/target/
+backend/Cargo.lock
+
+# Node modules (if any)
+node_modules/
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
