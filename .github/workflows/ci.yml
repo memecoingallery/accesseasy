@@ -1,0 +1,22 @@
+name: CI
+on:
+  push:
+    branches: [ main, ui/add-search ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Rust
+        uses: actions/setup-rust@v1
+        with:
+          toolchain: stable
+      - name: Build backend
+        working-directory: ./backend
+        run: cargo build --release
+      - name: Run tests
+        working-directory: ./backend
+        run: cargo test

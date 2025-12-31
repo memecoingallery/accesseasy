@@ -1,0 +1,57 @@
+[
+  {
+    "id": "ev-001",
+    "title": "Solana NFT Meetup",
+    "description": "Networking & Talks zu Solana NFTs, Entwickler und Sammler willkommen.",
+    "city": "Berlin",
+    "lat": 52.520008,
+    "lon": 13.404954,
+    "date": "2026-02-10",
+    "tags": "solana,nft,meetup,blockchain",
+    "url": "https://example.com/event/ev-001"
+  },
+  {
+    "id": "ev-002",
+    "title": "Acoustic Night",
+    "description": "Kleine Konzertreihe mit lokalen Musiker:innen.",
+    "city": "Hamburg",
+    "lat": 53.551086,
+    "lon": 9.993682,
+    "date": "2026-03-12",
+    "tags": "konzert,musik,live",
+    "url": ""
+  },
+  {
+    "id": "ev-003",
+    "title": "Crypto Art Ausstellung",
+    "description": "Ausstellung digitaler Kunstwerke, verbunden mit Live-Minting.",
+    "city": "Munich",
+    "lat": 48.135124,
+    "lon": 11.581981,
+    "date": "2026-01-20",
+    "tags": "kunst,crypto,ausstellung",
+    "url": "https://example.com/event/ev-003"
+  },
+  {
+    "id": "ev-004",
+    "title": "DeFi Developers Hackathon",
+    "description": "48h Hackathon für DeFi-Projekte auf Solana.",
+    "city": "Berlin",
+    "lat": 52.520008,
+    "lon": 13.404954,
+    "date": "2026-04-02",
+    "tags": "hackathon,defi,solana",
+    "url": "https://example.com/event/ev-004"
+  },
+  {
+    "id": "ev-005",
+    "title": "Community Picnic",
+    "description": "Offenes Treffen im Park für die lokale Krypto-Community.",
+    "city": "Cologne",
+    "lat": 50.937531,
+    "lon": 6.960279,
+    "date": "2026-05-15",
+    "tags": "community,picnic,treffen",
+    "url": ""
+  }
+]

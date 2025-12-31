@@ -1,0 +1,21 @@
+name: Deploy static site to GitHub Pages
+on:
+  push:
+    branches: [ main, ui/add-search ]
+
+jobs:
+  upload-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: public
+
+  deploy:
+    needs: upload-artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1

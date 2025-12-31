@@ -1,6 +1,3 @@
-/* Grundlegende UI-Styles für die Suchleiste und Event-Karten */
-/* Barrierefrei und responsiv; Anpassungen möglich */
-
 :root{
   --bg:#0f1724;
   --card:#0b1220;
@@ -29,7 +26,6 @@ body{
   padding:16px;
 }
 
-/* Topbar */
 .topbar{
   display:flex;
   justify-content:space-between;
@@ -59,7 +55,6 @@ body{
   cursor:pointer;
 }
 
-/* Search panel */
 .search-panel{
   background:rgba(255,255,255,0.02);
   padding:16px;
@@ -95,7 +90,6 @@ select#radius{
   border:1px solid rgba(255,255,255,0.04);
 }
 
-/* Buttons */
 .btn{
   background:transparent;
   color:var(--muted);
@@ -111,10 +105,8 @@ select#radius{
 }
 .btn:focus{outline:2px solid rgba(100,150,255,0.2); outline-offset:2px}
 
-/* Status */
 .status{margin-top:10px; color:var(--muted)}
 
-/* Results */
 .results{margin-top:12px}
 .events-list{
   list-style:none;
@@ -136,10 +128,8 @@ select#radius{
 .event-description{color:var(--muted);margin:8px 0}
 .event-actions{display:flex;gap:8px}
 
-/* Footer */
 .site-footer{margin-top:24px;text-align:center;color:var(--muted);padding:16px}
 
-/* Utility */
 .hidden{display:none}
 .visually-hidden{
   position:absolute!important;

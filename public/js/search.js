@@ -1,11 +1,6 @@
-// search.js — Logik für das regionale Event-Suche-Interface
-// Deutsch kommentiert, benutzt Geolocation + Fallback auf Stadt/PLZ
-// Einfaches clientseitiges Filtern anhand einer Beispiel-Datenquelle (data/events.json)
-
 const EVENTS_URL = './data/events.json';
 
 const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 const statusEl = $('#status');
 const listEl = $('#events-list');
@@ -15,7 +10,6 @@ const menu = document.getElementById('menu');
 
 let events = [];
 
-// --- Hilfsfunktionen ---
 function setStatus(msg) {
   statusEl.textContent = msg || '';
 }
@@ -30,7 +24,6 @@ function haversineDistance([lat1, lon1], [lat2, lon2]) {
   return R * c;
 }
 
-// Debounce
 function debounce(fn, wait=300){
   let t;
   return (...args) => {
@@ -39,7 +32,6 @@ function debounce(fn, wait=300){
   };
 }
 
-// Render helpers
 function renderEvents(list) {
   listEl.innerHTML = '';
   if(!list.length){
@@ -60,7 +52,6 @@ function renderEvents(list) {
   });
 }
 
-// --- Laden der Events ---
 async function loadEvents(){
   setStatus('Events werden geladen …');
   try{
@@ -74,7 +65,6 @@ async function loadEvents(){
   }
 }
 
-// --- Suche / Filter ---
 async function searchWithLocation(lat, lon, query='', radiusKm=10){
   setStatus('Suche in der Nähe …');
   const q = (query||'').trim().toLowerCase();
@@ -92,9 +82,7 @@ async function searchWithLocation(lat, lon, query='', radiusKm=10){
   setStatus(`${filtered.length} Ereignis(se) innerhalb von ${radiusKm} km gefunden.`);
 }
 
-// Fallback: einfache "Geocoding"-Nähe über PLZ/Stadt; hier: Use events.json to pick city center
 function geocodeCity(cityOrPostal){
-  // Einfacher heuristischer Versuch: suche eine Event-Stadt, die den Text enthält.
   const needle = (cityOrPostal||'').trim().toLowerCase();
   if(!needle) return null;
   const found = events.find(ev => ev.city && ev.city.toLowerCase().includes(needle));
@@ -102,11 +90,9 @@ function geocodeCity(cityOrPostal){
   return null;
 }
 
-// --- UI Interaktionen ---
 document.addEventListener('DOMContentLoaded', async () => {
   await loadEvents();
 
-  // Menü toggeln (einfach)
   menuToggle.addEventListener('click', () => {
     const expanded = menuToggle.getAttribute('aria-expanded') === 'true';
     menuToggle.setAttribute('aria-expanded', String(!expanded));
@@ -114,7 +100,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     menu.setAttribute('aria-hidden', String(expanded));
   });
 
-  // Geolocation-Button
   $('#geo-btn').addEventListener('click', () => {
     if(!navigator.geolocation){
       setStatus('Geolocation wird vom Browser nicht unterstützt.');
@@ -129,13 +114,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, (err) => {
       console.warn(err);
       setStatus('Standort konnte nicht ermittelt werden. Du kannst stattdessen eine Stadt/PLZ eingeben.');
-      // Fallback UI zeigen
       $('#fallback-location').classList.remove('hidden');
       $('#fallback-location').setAttribute('aria-hidden', 'false');
     }, {timeout: 10000});
   });
 
-  // Fallback: Stadt verwenden
   $('#use-city').addEventListener('click', async () => {
     const city = $('#city').value;
     const loc = geocodeCity(city);
@@ -148,22 +131,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     await searchWithLocation(loc.lat, loc.lon, $('#query').value, radius);
   });
 
-  // Formular-Suche
   $('#search-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     setStatus('Suche wird ausgeführt …');
-    // Versuche Geolocation zuerst, sonst Fallback nach Stadt falls sichtbar, sonst suche global nach Begriff
     if(navigator.geolocation){
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const lat = pos.coords.latitude, lon = pos.coords.longitude;
         await searchWithLocation(lat, lon, $('#query').value, Number($('#radius').value));
       }, async () => {
-        // Falls Fehler, wenn fallback sichtbar: benutze Stadt, sonst globale Suche
         const fallback = document.getElementById('fallback-location');
         if(!fallback.classList.contains('hidden')){
           const loc = geocodeCity($('#city').value);
           if(loc) await searchWithLocation(loc.lat, loc.lon, $('#query').value, Number($('#radius').value));
-          else { // globale text-Suche
+          else {
             const q = ($('#query').value||'').toLowerCase();
             const filtered = events.filter(ev => (ev.title + ' ' + ev.tags + ' ' + ev.description + ' ' + ev.city).toLowerCase().includes(q));
             renderEvents(filtered);
@@ -177,7 +157,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }, {timeout:8000});
     } else {
-      // Kein Geolocation
       const q = ($('#query').value||'').toLowerCase();
       const filtered = events.filter(ev => (ev.title + ' ' + ev.tags + ' ' + ev.description + ' ' + ev.city).toLowerCase().includes(q));
       renderEvents(filtered);
@@ -185,7 +164,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Sofort eine initiale Liste anzeigen (z. B. alle kommenden Events)
   renderEvents(events.slice(0, 12));
   setStatus('Zeige Beispiel-Events. Nutze die Suche oder „In meiner Nähe suchen”.');
 
@@ -198,9 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Tipp: Suche beim Tippen debounced
   $('#query').addEventListener('input', debounce(() => {
-    // Wenn nur Text eingegeben wird, mache eine globale Textsuche
     const q = $('#query').value.trim();
     if(q.length >= 2){
       const filtered = events.filter(ev => (ev.title + ' ' + ev.tags + ' ' + ev.description + ' ' + ev.city).toLowerCase().includes(q.toLowerCase()));
