@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Decentralized Event Ticket Payments</title>
+
+  <meta name="description" content="Generate event tickets and accept crypto payments via Solana using utility tokens or stablecoins. Non-custodial, GDPR-compliant." />
+  <meta name="robots" content="index, follow" />
+
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --card: #121826;
+      --accent: #f7931a;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    header p {
+      color: var(--muted);
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 3rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+
+    .card h3 {
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .cta {
+      margin-top: 3rem;
+      text-align: center;
+    }
+
+    .cta button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 0.9rem 1.6rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .cta button:hover {
+      opacity: 0.9;
+    }
+
+    footer {
+      margin-top: 4rem;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: underline;
+    }
+
+    .disclaimer {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Decentralized Event Ticket Payments</h1>
+    <p>
+      A Solana-based utility payment layer for the event industry.
+      Hosts generate tickets. Guests pay in crypto. No custodial wallets. No fiat handling.
+    </p>
+  </header>
+
+  <main>
+
+    <section class="grid">
+      <div class="card">
+        <h3>For Event Hosts</h3>
+        <p>
+          Generate ticket batches by defining quantity, price, date and location.
+          Pay generation fees using utility tokens or stablecoins.
+          Receive funds directly to your non-custodial Solana wallet.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>For Guests</h3>
+        <p>
+          Pay securely via Solana Pay QR code or your preferred wallet.
+          Receive a payment confirmation and receipt via email.
+          Tickets are delivered separately by the event host.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Payment Assets</h3>
+        <p>
+          Supported assets include community-driven utility tokens and
+          EURC or USDC stablecoins, depending on the event region.
+          Live SOL price conversion is applied at checkout.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Compliance & Privacy</h3>
+        <p>
+          GDPR-aware by design. Minimal data collection.
+          No KYC. No wallet custody. Email data is used solely for payment confirmation.
+        </p>
+      </div>
+    </section>
+
+    <div class="cta">
+      <button disabled>
+        Host Dashboard (Coming Soon)
+      </button>
+      <div class="disclaimer">
+        This platform does not issue tickets and does not hold user funds.
+        Smart contract settlement occurs directly on the Solana blockchain.
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <div>
+      © 2025 – Decentralized Event Payments
+    </div>
+    <div class="disclaimer">
+      This website is a non-custodial software interface. No financial advice is provided.
+      By using this service you acknowledge blockchain transaction risks.
+      <br/>
+      <a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a>
+    </div>
+  </footer>
+
+</body>
+</html>
