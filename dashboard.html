@@ -104,8 +104,7 @@
           <div style="margin-top:12px" class="fees-box" aria-live="polite">
             <div style="font-weight:700;margin-bottom:6px">Fees (selected ticket quantity)</div>
             <div id="fees-content">
-              <div class="fees-row"><div>Platform Fee</div><div id="platform-fee">—</div></div>
-              <div class="fees-row"><div>Service Fee</div><div id="service-fee">—</div></div>
+              <div class="fees-row"><div>Platform Fee (includes service fee)</div><div id="platform-fee">—</div></div>
               <div class="fees-row"><div>Total Fee</div><div id="total-fee">—</div></div>
             </div>
 
@@ -137,14 +136,14 @@
 
   <script>
     (function () {
-      // Fee matrix (ticketCount => [platformFeeSOL, serviceFeeSOL])
+      // Fee table now contains only the platform fee (service fee removed)
       const FEE_TABLE = {
-        "100":   [0.3,  0.11],
-        "250":   [0.55, 0.22],
-        "500":   [1.0,  0.35],
-        "1000":  [1.8,  0.60],
-        "2500":  [3.0,  1.1],
-        "10000": [9.0,  3.0]
+        "100":   0.3,
+        "250":   0.55,
+        "500":   1.0,
+        "1000":  1.8,
+        "2500":  3.0,
+        "10000": 9.0
       };
 
       const receiverAddress = 'UkG6htp8SmC4ukEVGXFbhngiKo86cquYupKha36FfFE';
@@ -152,7 +151,6 @@
       // UI refs
       const ticketRadios = Array.from(document.querySelectorAll('input[name="tickets"]'));
       const platformFeeEl = document.getElementById('platform-fee');
-      const serviceFeeEl = document.getElementById('service-fee');
       const totalFeeEl = document.getElementById('total-fee');
       const connectBtn = document.getElementById('connect-wallet');
       const payBtn = document.getElementById('pay-fees');
@@ -173,7 +171,6 @@
         const sel = ticketRadios.find(r => r.checked);
         if (!sel) {
           platformFeeEl.textContent = '—';
-          serviceFeeEl.textContent = '—';
           totalFeeEl.textContent = '—';
           payBtn.disabled = true;
           selectedTicket = null;
@@ -182,13 +179,10 @@
         }
         const qty = sel.value;
         selectedTicket = qty;
-        const fees = FEE_TABLE[qty];
-        if (!fees) return;
-        const platform = fees[0];
-        const service  = fees[1];
-        totalSOL = platform + service;
+        const platform = FEE_TABLE[qty];
+        if (platform === undefined) return;
+        totalSOL = platform; // total equals platform fee (service fee removed)
         platformFeeEl.textContent = fmt(platform);
-        serviceFeeEl.textContent = fmt(service);
         totalFeeEl.textContent = fmt(totalSOL);
         // Pay button enabled only if wallet connected
         payBtn.disabled = !connected;
@@ -276,19 +270,15 @@
           const { blockhash } = await connection.getRecentBlockhash();
           tx.recentBlockhash = blockhash;
 
-          // Phantom supports signAndSendTransaction in many versions; try it first
+          // sign and send (Phantom supports signAndSendTransaction)
           txStatus.textContent = 'Requesting wallet signature...';
 
           if (provider.signAndSendTransaction) {
-            // sign & send
             const signed = await provider.signAndSendTransaction(tx);
-            // signed contains signature if wallet implements signAndSendTransaction
             txStatus.textContent = 'Submitted. Signature: ' + (signed.signature || signed);
-            // Optionally confirm
             await connection.confirmTransaction(signed.signature || signed);
             txStatus.textContent = 'Transaction confirmed. Signature: ' + (signed.signature || signed);
           } else if (provider.signTransaction) {
-            // fallback: sign then send via RPC
             const signedTx = await provider.signTransaction(tx);
             const raw = signedTx.serialize();
             const sig = await connection.sendRawTransaction(raw);
@@ -308,7 +298,6 @@
       document.getElementById('reset').addEventListener('click', () => {
         document.getElementById('event-form').reset();
         platformFeeEl.textContent = '—';
-        serviceFeeEl.textContent = '—';
         totalFeeEl.textContent = '—';
         txStatus.textContent = '';
         walletStatus.textContent = connected ? 'Connected' : 'Not connected';
