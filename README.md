@@ -63,10 +63,12 @@ This logic is enforced:
 
 | Ticket Batch | Stablecoins | Utility Tokens |
 |-------------|-------------|----------------|
-| 100 tickets | 0.10 SOL | 0.049 SOL |
-| 250 tickets | 0.20 SOL | 0.096 SOL |
-| 500 tickets | 0.35 SOL | 0.15 SOL |
-
+| 100 tickets | 0.3 SOL | 0.11 SOL |
+| 250 tickets | 0.55 SOL | 0.22 SOL |
+| 500 tickets | 1 SOL | 0.35 SOL |
+| 1000 tickets | 1.8 SOL | 0.60 SOL |
+| 2500 tickets | 3 SOL | 1.1 SOL |
+| 10000 tickets | 9 SOL | 3 SOL |
 Fees are converted in real time using live SOL pricing
 and transferred directly to the platform fee wallet:
 
