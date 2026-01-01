@@ -13,17 +13,17 @@
     h1{font-size:1.6rem;margin-bottom:0.5rem}
     p.lead{color:var(--muted);margin-bottom:1.5rem}
     .dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
-    .card{background:var(--card);border:1px solid var(--border);padding:1rem;border-radius:10px}
+    .card{background:var(--card);border:1px solid var(--border);padding:1rem;border-radius:10px;position:relative}
     .card h2{font-size:1.05rem;margin-bottom:0.75rem}
     label{display:block;font-size:0.9rem;margin-bottom:0.35rem;color:var(--muted)}
     input[type="text"], input[type="time"], textarea, select{width:100%;padding:0.5rem;border-radius:6px;border:1px solid #26303a;background:#0f1418;color:var(--text)}
     textarea{min-height:100px;resize:vertical}
     .ticket-options{display:flex;flex-wrap:wrap;gap:0.5rem}
-    .ticket-options label{background:#0f1418;padding:0.45rem 0.65rem;border-radius:6px;border:1px solid #26303a;cursor:pointer}
+    .ticket-options label{background:#0f1418;padding:0.45rem 0.65rem;border-radius:6px;border:1px solid #26303a;cursor:pointer;user-select:none}
     .ticket-options input{display:none}
     .ticket-options input:checked+span{background:var(--accent);color:#000;padding:0.45rem 0.65rem;border-radius:6px}
-    .asset-buttons{display:flex;gap:0.5rem;flex-wrap:wrap}
-    .asset-buttons button{background:#0f1418;color:var(--text);border:1px solid #26303a;padding:0.5rem 0.75rem;border-radius:6px;cursor:pointer}
+    .asset-buttons{display:flex;gap:0.5rem;flex-wrap:wrap;z-index:3;position:relative}
+    .asset-buttons button{background:#0f1418;color:var(--text);border:1px solid #26303a;padding:0.5rem 0.75rem;border-radius:6px;cursor:pointer;position:relative;z-index:4}
     .asset-buttons button.active{background:var(--accent);color:#000}
     .actions{margin-top:1rem;display:flex;gap:0.5rem}
     .actions button.primary{background:var(--accent);color:#000;border:none;padding:0.6rem 1rem;border-radius:6px;cursor:pointer}
@@ -37,6 +37,8 @@
     .token-row { display:flex; justify-content:space-between; gap: 12px; align-items:center; padding:6px 0; }
     .token-name { color: var(--muted); font-size:0.95rem; }
     .token-value { color: var(--text); font-weight:700; }
+    /* ensure no overlay prevents clicks */
+    .card::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -108,7 +110,7 @@
           <div style="margin-top:12px" class="fees-box" aria-live="polite">
             <div style="font-weight:700;margin-bottom:6px">Fees (selected ticket quantity)</div>
             <div id="fees-content">
-              <div class="fees-row"><div>Platform Fee</div><div id="platform-fee">—</div></div>
+              <div class="fees-row"><div>Platform Fee (includes service)</div><div id="platform-fee">—</div></div>
               <div class="fees-row"><div>Total Fee</div><div id="total-fee">—</div></div>
             </div>
 
@@ -120,17 +122,17 @@
               </div>
 
               <div class="token-row">
-                <div class="token-name">Token: FLdtFf57... (PumpFun / DESPERADO)</div>
+                <div class="token-name" id="tok1-label">DESPERADO</div>
                 <div class="token-value" id="tok1-amt">—</div>
               </div>
 
               <div class="token-row">
-                <div class="token-name">Token: HBpx1KCM... (PumpFun / NWO)</div>
+                <div class="token-name" id="tok2-label">NWO</div>
                 <div class="token-value" id="tok2-amt">—</div>
               </div>
 
               <div class="small" style="margin-top:8px;color:var(--muted)">
-                Conversion via Jupiter API (quotes). If a quote isn't available, "N/A" will be shown.
+                Conversion via Jupiter API (quotes). If a quote isn't available, "Not listed" will be shown.
               </div>
             </div>
 
@@ -162,7 +164,7 @@
 
   <script>
     (function () {
-      // Single (platform) fees in SOL
+      // Platform fees in SOL (service fee removed)
       const FEE_TABLE = {
         "100":   0.3,
         "250":   0.55,
@@ -172,14 +174,35 @@
         "10000": 9.0
       };
 
-      // Token mint addresses requested (use these for Jupiter quotes)
-      const TOKEN_MINT_1 = 'FLdtFf57DbhPWZkz2HnEd4e9PRX7enFWQq7uPDDspump'; // DESPERADO (example)
-      const TOKEN_MINT_2 = 'HBpx1KCMhqsB5yKrZTqX747EPGTdfm8LJeUgNsbGpump'; // NWO (example)
+      // Original user-provided token strings (may have suffixes like "pump")
+      const RAW_TOKEN_1 = 'FLdtFf57DbhPWZkz2HnEd4e9PRX7enFWQq7uPDDspump';
+      const RAW_TOKEN_2 = 'HBpx1KCMhqsB5yKrZTqX747EPGTdfm8LJeUgNsbGpump';
 
-      const W_SOL_MINT = 'So11111111111111111111111111111111111111112'; // wrapped SOL mint used by Jupiter
+      // Token lookup: friendly name -> canonical mint.
+      // IMPORTANT: If Jupiter does not have the token in its token list, quotes will fail.
+      // We'll attempt to normalize the provided strings by stripping a trailing "pump" if present.
+      const tokenLookup = {
+        'DESPERADO': normalizeMint(RAW_TOKEN_1),
+        'NWO': normalizeMint(RAW_TOKEN_2)
+      };
+
+      // mapping mint -> friendly label (for display)
+      const mintToLabel = {};
+      for (const [label, mint] of Object.entries(tokenLookup)) {
+        mintToLabel[mint] = label;
+      }
+
+      // helper: strip trailing 'pump' if present (user supplied pump.fun tokens often append 'pump')
+      function normalizeMint(raw) {
+        if (!raw) return raw;
+        if (raw.endsWith('pump')) return raw.slice(0, -4);
+        return raw;
+      }
+
+      // wSOL and Jupiter endpoints
+      const W_SOL_MINT = 'So11111111111111111111111111111111111111112';
       const JUPITER_TOKEN_LIST = 'https://cache.jup.ag/tokens';
       const JUPITER_QUOTE_API = 'https://quote-api.jup.ag/v4/quote';
-
       const receiverAddress = 'UkG6htp8SmC4ukEVGXFbhngiKo86cquYupKha36FfFE';
 
       // UI refs
@@ -195,22 +218,27 @@
       const solUsdEl = document.getElementById('sol-usd');
       const tok1El = document.getElementById('tok1-amt');
       const tok2El = document.getElementById('tok2-amt');
+      const tok1LabelEl = document.getElementById('tok1-label');
+      const tok2LabelEl = document.getElementById('tok2-label');
+
+      // set friendly labels
+      tok1LabelEl.textContent = Object.keys(tokenLookup)[0] || 'Token 1';
+      tok2LabelEl.textContent = Object.keys(tokenLookup)[1] || 'Token 2';
 
       let provider = null; // window.solana wallet provider
       let connected = false;
       let selectedTicket = null;
       let totalSOL = 0;
 
-      // token metadata cache
+      // token list & decimals cache
       let tokenList = null;
       const tokenDecimalsCache = {};
 
-      // Helper: format SOL
+      // Helper: format
       function fmtSOL(sol) { return sol.toFixed(6) + ' SOL'; }
       function fmtToken(num) {
         if (num === null || num === undefined || Number.isNaN(num)) return 'N/A';
-        if (num === Infinity) return 'N/A';
-        // show up to 6 decimals, trim
+        if (!isFinite(num)) return 'N/A';
         return Number(num.toFixed(6)).toString();
       }
 
@@ -230,79 +258,62 @@
         selectedTicket = qty;
         const platform = FEE_TABLE[qty];
         if (platform === undefined) return;
-        totalSOL = platform; // only platform fee now
+        totalSOL = platform;
         platformFeeEl.textContent = fmtSOL(platform);
         totalFeeEl.textContent = fmtSOL(totalSOL);
         // update conversions
         updateConversions();
-        // Pay button enabled only if wallet connected
         payBtn.disabled = !connected;
       }
 
-      ticketRadios.forEach(r => {
-        r.addEventListener('change', updateFees);
-      });
+      ticketRadios.forEach(r => r.addEventListener('change', updateFees));
 
-      // Fetch SOL price in USD (CoinGecko)
-      async function fetchSolUsd() {
-        try {
-          const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
-          const data = await res.json();
-          if (data && data.solana && data.solana.usd) {
-            solUsdEl.textContent = '$' + Number(data.solana.usd).toFixed(2);
-            return data.solana.usd;
-          } else {
-            solUsdEl.textContent = 'N/A';
-            return null;
-          }
-        } catch (err) {
-          solUsdEl.textContent = 'N/A';
-          return null;
-        }
-      }
-
-      // Load Jupiter token list (to know decimals)
+      // Load Jupiter token list (for decimals & detection)
       async function loadTokenList() {
         if (tokenList) return tokenList;
         try {
           const res = await fetch(JUPITER_TOKEN_LIST);
           tokenList = await res.json();
-          // build decimals cache
-          tokenList.forEach(t => {
-            tokenDecimalsCache[t.address] = t.decimals;
-          });
+          tokenList.forEach(t => tokenDecimalsCache[t.address] = t.decimals);
           return tokenList;
         } catch (err) {
-          console.warn('Could not fetch Jupiter token list', err);
+          console.warn('Failed to load Jupiter token list', err);
           tokenList = [];
           return tokenList;
         }
       }
 
-      // Get decimals for mint (fallback 0)
       async function getDecimals(mint) {
         await loadTokenList();
         return tokenDecimalsCache[mint] ?? 0;
       }
 
-      // Convert SOL (amount) into token units using Jupiter Quote API:
-      // We call quote API with inputMint = wSOL, outputMint = tokenMint, amount = lamports (SOL * 1e9)
-      // Then outAmount is returned (in token's smallest units)
+      // Convert SOL to token via Jupiter quote API.
+      // If token not available in Jupiter token list, function returns null.
       async function convertSolToToken(tokenMint, solAmount) {
         try {
           if (!solAmount || solAmount <= 0) return null;
           await loadTokenList();
-          const lamports = Math.round(solAmount * 1e9); // wSOL decimals = 9
+          // check if token exists in Jupiter token list
+          const found = tokenList.find(t => t.address === tokenMint);
+          if (!found) {
+            console.warn('Token not found in Jupiter token list:', tokenMint);
+            // As an additional attempt: try normalized mint (in case trailing 'pump' is present)
+            // but normalizeMint was already applied.
+            return null;
+          }
+          // amount in lamports
+          const lamports = Math.round(solAmount * 1e9);
           const url = `${JUPITER_QUOTE_API}?inputMint=${encodeURIComponent(W_SOL_MINT)}&outputMint=${encodeURIComponent(tokenMint)}&amount=${lamports}&slippage=1`;
           const res = await fetch(url);
-          if (!res.ok) throw new Error('Quote API error: ' + res.status);
-          const json = await res.json();
-          if (!json || !json.data || json.data.length === 0) {
-            return null; // no route
+          if (!res.ok) {
+            console.warn('Jupiter quote API returned status', res.status);
+            return null;
           }
-          // choose first route
+          const json = await res.json();
+          if (!json || !json.data || json.data.length === 0) return null;
           const route = json.data[0];
-          const outAmountStr = route.outAmount; // integer in token smallest units (string)
+          const outAmountStr = route.outAmount;
           const decimals = tokenDecimalsCache[tokenMint] ?? (await getDecimals(tokenMint));
           const outAmount = Number(outAmountStr) / Math.pow(10, decimals);
           return outAmount;
@@ -312,47 +323,56 @@
         }
       }
 
-      // Update both conversions and SOL price
+      // Update conversions (SOL->token) and SOL price USD
       async function updateConversions() {
         solUsdEl.textContent = 'Loading...';
         tok1El.textContent = 'Loading...';
         tok2El.textContent = 'Loading...';
 
-        const solUsd = await fetchSolUsd();
+        // fetch SOL price
+        let solUsd = null;
+        try {
+          const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+          const data = await res.json();
+          if (data && data.solana && data.solana.usd) {
+            solUsd = data.solana.usd;
+            solUsdEl.textContent = '$' + Number(solUsd).toFixed(2);
+          } else {
+            solUsdEl.textContent = 'N/A';
+          }
+        } catch (err) {
+          solUsdEl.textContent = 'N/A';
+        }
 
-        // if no selected ticket or fee, clear
         if (!selectedTicket || !totalSOL) {
-          tok1El.textContent = 'N/A';
-          tok2El.textContent = 'N/A';
-          if (!solUsd) solUsdEl.textContent = 'N/A';
+          tok1El.textContent = 'Not listed';
+          tok2El.textContent = 'Not listed';
           return;
         }
 
         // convert for each token
-        // Note: token mints used are as provided; if Jupiter cannot find a route, result will be null
+        const mint1 = tokenLookup['DESPERADO'];
+        const mint2 = tokenLookup['NWO'];
+
         const [t1, t2] = await Promise.all([
-          convertSolToToken(TOKEN_MINT_1, totalSOL),
-          convertSolToToken(TOKEN_MINT_2, totalSOL)
+          convertSolToToken(mint1, totalSOL),
+          convertSolToToken(mint2, totalSOL)
         ]);
 
-        tok1El.textContent = t1 !== null ? `${fmtToken(t1)} tokens` : 'N/A';
-        tok2El.textContent = t2 !== null ? `${fmtToken(t2)} tokens` : 'N/A';
+        tok1El.textContent = t1 !== null ? `${fmtToken(t1)} ${mintToLabel[mint1] ?? ''}` : 'Not listed';
+        tok2El.textContent = t2 !== null ? `${fmtToken(t2)} ${mintToLabel[mint2] ?? ''}` : 'Not listed';
 
-        // if SOL price available, show USD equivalent for total fee too (optional)
         if (solUsd) {
           const usd = (totalSOL * solUsd).toFixed(2);
-          // append USD to total fee display
           totalFeeEl.textContent = fmtSOL(totalSOL) + ' (' + '$' + usd + ')';
         }
       }
 
-      // Wallet integration (Phantom / window.solana)
+      // Wallet integration
       function getProvider() {
         if ('solana' in window) {
           const anyWindow = window;
-          const providerCandidate = anyWindow.solana;
-          if (providerCandidate.isPhantom) return providerCandidate;
-          return providerCandidate; // other wallets might also work
+          return anyWindow.solana;
         }
         return null;
       }
@@ -367,29 +387,19 @@
           await provider.connect();
           connected = true;
           walletStatus.textContent = 'Connected: ' + (provider.publicKey ? provider.publicKey.toString().slice(0,8) : 'wallet');
-          // enable pay button if a ticket is selected
           payBtn.disabled = !selectedTicket;
         } catch (err) {
           walletStatus.textContent = 'Connection rejected';
           console.error('connect error', err);
         }
       }
+      connectBtn.addEventListener('click', connectWallet);
 
-      connectBtn.addEventListener('click', async () => {
-        await connectWallet();
-      });
-
-      // Pay fees (same behavior as before: send SOL amount)
+      // Pay fees (send SOL)
       payBtn.addEventListener('click', async () => {
         txStatus.textContent = '';
-        if (!connected || !provider) {
-          txStatus.textContent = 'Please connect your wallet first.';
-          return;
-        }
-        if (!selectedTicket || totalSOL <= 0) {
-          txStatus.textContent = 'Please select a ticket quantity.';
-          return;
-        }
+        if (!connected || !provider) { txStatus.textContent = 'Please connect your wallet first.'; return; }
+        if (!selectedTicket || totalSOL <= 0) { txStatus.textContent = 'Please select a ticket quantity.'; return; }
 
         const network = networkSelect.value;
         const connectionUrl = network === 'mainnet'
@@ -401,28 +411,17 @@
 
         try {
           txStatus.textContent = 'Preparing transaction...';
-
           const connection = new solanaWeb3.Connection(connectionUrl, 'confirmed');
           const fromPubkey = provider.publicKey;
           const toPubkey = new solanaWeb3.PublicKey(receiverAddress);
-
-          // lamports conversion
           const lamports = Math.round(totalSOL * 1e9);
-
           const tx = new solanaWeb3.Transaction().add(
-            solanaWeb3.SystemProgram.transfer({
-              fromPubkey,
-              toPubkey,
-              lamports
-            })
+            solanaWeb3.SystemProgram.transfer({ fromPubkey, toPubkey, lamports })
           );
-
           tx.feePayer = fromPubkey;
           const { blockhash } = await connection.getRecentBlockhash();
           tx.recentBlockhash = blockhash;
-
           txStatus.textContent = 'Requesting wallet signature...';
-
           if (provider.signAndSendTransaction) {
             const signed = await provider.signAndSendTransaction(tx);
             txStatus.textContent = 'Submitted. Signature: ' + (signed.signature || signed);
@@ -444,6 +443,22 @@
         }
       });
 
+      // Fix asset button selection — robust event delegation
+      (function wireAssetButtons(){
+        const container = document.querySelector('.asset-buttons');
+        let selected = null;
+        container.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-asset]');
+          if (!btn) return;
+          // toggle active class
+          container.querySelectorAll('button[data-asset]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selected = btn.getAttribute('data-asset');
+          // store selected asset (if you want to use it elsewhere)
+          container.dataset.selectedAsset = selected;
+        });
+      })();
+
       // Reset
       document.getElementById('reset').addEventListener('click', () => {
         document.getElementById('event-form').reset();
@@ -458,23 +473,15 @@
         totalSOL = 0;
       });
 
-      // initialize: if wallet already injected, show short status; also pre-load token list
+      // initialize: pre-load token list and try to show conversions when page loads
       window.addEventListener('load', async () => {
-        if (getProvider() && getProvider().isConnected) {
-          provider = getProvider();
-          connected = true;
-          walletStatus.textContent = 'Connected';
-        }
-        // pre-load token list for decimals
-        await loadTokenList().catch(()=>{});
+        await loadTokenList();
+        // ensure tokenLookup uses valid canonical mints
+        // If tokens aren't in Jupiter token list, conversion will show "Not listed".
+        // You can inspect tokenList to see what mints are available.
+        // call updateFees once to set state
+        updateFees();
       });
-
-      // update fees when network changes as well (quotes rely on API; network selection preserved for send only)
-      networkSelect.addEventListener('change', updateConversions);
-
-      // expose updateFees for initial selection
-      // (if you want a default selected, trigger change manually)
-      updateFees();
     })();
   </script>
 </body>
