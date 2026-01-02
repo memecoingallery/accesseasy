@@ -57,7 +57,7 @@
       gap: 0.5rem;
     }
 
-    .about-btn {
+    .about-btn, .roadmap-btn {
       background: transparent;
       color: var(--text);
       border: 1px solid rgba(255,255,255,0.04);
@@ -66,7 +66,7 @@
       cursor: pointer;
       font-weight: 600;
     }
-    .about-btn:hover { background: rgba(255,255,255,0.02); transform: translateY(-1px); }
+    .about-btn:hover, .roadmap-btn:hover { background: rgba(255,255,255,0.02); transform: translateY(-1px); }
 
     .icon-btn {
       display: inline-flex;
@@ -277,6 +277,7 @@
   <div class="topbar" role="navigation" aria-label="Top social bar">
     <div class="left">
       <button id="about-button" class="about-btn" aria-haspopup="dialog" aria-controls="about-modal">About</button>
+      <button id="roadmap-button" class="roadmap-btn" aria-haspopup="dialog" aria-controls="roadmap-modal">Roadmap</button>
     </div>
 
     <div class="right">
@@ -339,6 +340,50 @@ Through accesseasy, hosts can issue secure, verifiable tickets directly on-chain
 By leveraging Solana’s high-speed, low-cost infrastructure, accesseasy delivers instant payments, near-zero transaction fees, and a smooth user experience for both organizers and attendees. Payments settle in seconds, reducing chargebacks, fraud, and administrative overhead while giving hosts immediate control over their revenue.
 
 accesseasy is built for scale and flexibility—supporting everything from one-night club entries to large, multi-day festivals. The result is a unified eventlayer where ticketing, access control, and payments converge into a single, efficient system that is simpler, faster, and more reliable than traditional approaches.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Roadmap modal -->
+  <div id="roadmap-modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" id="roadmap-modal" tabindex="-1" aria-labelledby="roadmap-title">
+      <button class="modal-close" id="roadmap-close" aria-label="Close Roadmap">&times;</button>
+      <div class="modal-header">
+        <h2 id="roadmap-title">accesseasy Roadmap</h2>
+      </div>
+      <div class="modal-body">
+        <p>
+<strong>Phase 1 – Core Eventlayer Infrastructure</strong>
+Development of the accesseasy eventlayer on Solana, enabling crypto-native ticketing and payments.
+Implementation of on-chain ticket minting for events of all sizes.
+Secure, verifiable digital tickets designed for fast validation and fraud resistance.
+
+<strong>Phase 2 – Non-Custodial Host Wallets</strong>
+Provision of a non-custodial wallet for every host.
+Hosts retain full control over ticket minting, pricing, and distribution.
+All ticket payments are settled directly to the host's wallet without intermediaries.
+
+<strong>Phase 3 – Regional Payment Support</strong>
+- <strong>North, Central, and South America</strong>
+  - Ticket minting and platform fees payable in USDC.
+  - Ongoing development of reduced-fee mechanisms using the accesseasy utility token DESPERADO.
+- <strong>Rest of the World</strong>
+  - Ticket minting and platform fees payable in EURC.
+  - Ongoing development of reduced-fee mechanisms using the utility token Night Watching Owl.
+
+<strong>Phase 4 – Fee Optimization via Utility Tokens</strong>
+Integration of utility tokens to lower platform and minting fees.
+Incentive structures for hosts who adopt DESPERADO or Night Watching Owl for fee payments.
+Progressive transition toward a token-optimized event economy.
+
+<strong>Phase 5 – Host-Driven Ticket Distribution</strong>
+Hosts distribute tickets directly to attendees without centralized custody.
+Support for direct sales, private distribution, and community-driven access models.
+Attendees pay in crypto and receive tickets instantly on-chain.
+
+<strong>Vision</strong>
+accesseasy is building a global, decentralized eventlayer where ticketing, access, and payments converge—non-custodial, borderless, and optimized for real-world events.
         </p>
       </div>
     </div>
@@ -491,6 +536,51 @@ accesseasy is built for scale and flexibility—supporting everything from one-n
       }
 
       aboutBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        openModal();
+      });
+
+      closeBtn.addEventListener('click', function () {
+        closeModal();
+      });
+
+      // close when clicking outside modal content
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closeModal();
+      });
+
+      // close on Escape
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && overlay.style.display === 'flex') {
+          closeModal();
+        }
+      });
+    })();
+
+    // Roadmap modal logic
+    (function() {
+      const roadmapBtn = document.getElementById('roadmap-button');
+      const overlay = document.getElementById('roadmap-modal-overlay');
+      const modal = document.getElementById('roadmap-modal');
+      const closeBtn = document.getElementById('roadmap-close');
+
+      function openModal() {
+        overlay.style.display = 'flex';
+        overlay.setAttribute('aria-hidden', 'false');
+        // focus close button for keyboard users
+        setTimeout(() => closeBtn.focus(), 50);
+        // prevent body scroll
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal() {
+        overlay.style.display = 'none';
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        roadmapBtn.focus();
+      }
+
+      roadmapBtn.addEventListener('click', function (e) {
         e.preventDefault();
         openModal();
       });
