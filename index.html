@@ -1,515 +1,411 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Decentralized Event Ticket Payments</title>
-
-  <meta name="description" content="Generate event tickets and accept crypto payments via Solana using utility tokens or stablecoins. Non-custodial, GDPR-compliant." />
-  <meta name="robots" content="index, follow" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>accesseasy — Decentralized Event Payments</title>
+  <meta name="description" content="accesseasy — event payment layer on Solana" />
 
   <style>
-    :root {
-      --bg: #0b0f14;
-      --card: #121826;
-      --accent: #f7931a;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --border: #1f2937;
-      --topbar-bg: #071018;
+    :root{
+      /* Pastel blue palette with orange & white accents */
+      --bg: #e8f4ff;               /* light pastel blue page background */
+      --panel: #d6eefd;            /* slightly darker pastel card */
+      --muted-panel: #cbe7ff;      /* subtle card border */
+      --accent-orange: #ff9f4a;    /* orange accent */
+      --accent-orange-2: #ffb86b;  /* lighter orange */
+      --white: #ffffff;
+      --text: #07263a;             /* dark blue text */
+      --muted: #4b6b7a;            /* muted text */
+      --border: rgba(7,38,58,0.08);
+      --glass: rgba(255,255,255,0.6);
+      --shadow: 0 8px 30px rgba(7,38,58,0.08);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg,var(--bg), #d6f0ff 60%);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.45;
     }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    /* Topbar with social icons and About button */
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 56px;
-      background: var(--topbar-bg);
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      padding: 0 1rem;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-      z-index: 999;
-    }
-
-    .topbar .left,
-    .topbar .right {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .about-btn {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid rgba(255,255,255,0.04);
-      padding: 8px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .about-btn:hover { background: rgba(255,255,255,0.02); transform: translateY(-1px); }
-
-    .icon-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      background: transparent;
-      color: var(--text);
-      border: 1px solid rgba(255,255,255,0.03);
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .icon-btn:hover {
-      background: rgba(255,255,255,0.02);
-      transform: translateY(-1px);
-    }
-
-    /* Dropdown container */
-    .dropdown {
-      position: relative;
-    }
-
-    .dropdown-menu {
-      display: none;
-      position: absolute;
-      right: 0;
-      top: 48px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      min-width: 240px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-      z-index: 1000;
-    }
-
-    .dropdown-menu a {
-      display: block;
-      padding: 0.6rem 0.9rem;
-      color: var(--text);
-      text-decoration: none;
-      border-bottom: 1px solid rgba(255,255,255,0.02);
-      font-size: 0.95rem;
-    }
-
-    .dropdown-menu a:last-child { border-bottom: none; }
-
-    .dropdown-menu a:hover {
-      background: rgba(255,255,255,0.02);
-      color: #fff;
-    }
-
-    .dropdown.open .dropdown-menu { display: block; }
-
-    /* About modal */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(3,6,9,0.7);
-      z-index: 2000;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-
-    .modal {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      max-width: 900px;
-      width: 100%;
-      max-height: 80vh;
-      overflow: auto;
-      padding: 20px 22px;
-      color: var(--text);
-    }
-
-    .modal h2 {
-      margin-bottom: 8px;
-    }
-
-    .modal p {
-      color: var(--muted);
-      margin-bottom: 12px;
-      white-space: pre-wrap;
-    }
-
-    .modal-close {
-      position: absolute;
-      top: 14px;
-      right: 18px;
-      background: transparent;
-      color: var(--text);
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-    }
-
-    .modal-header {
-      position: sticky;
-      top: 0;
-      background: transparent;
-      padding-bottom: 8px;
-    }
-
-    /* push page content down to avoid overlap with fixed topbar */
-    main, header, footer { padding-top: 16px; }
-    .page-container { padding-top: 72px; }
-
-    /* existing site styles */
-    header {
-      padding: 2rem 1.5rem;
-      text-align: center;
+    /* Topbar */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px 20px;
+      backdrop-filter: blur(6px);
+      background: linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.35));
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(7,38,58,0.04);
+      position:sticky;
+      top:0;
+      z-index:100;
+    }
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .brand img.logo{
+      width:56px;
+      height:56px;
+      border-radius:12px;
+      object-fit:cover;
+      box-shadow: 0 6px 16px rgba(7,38,58,0.08);
+      border: 3px solid var(--white);
+    }
+    .brand .title{
+      display:flex;
+      flex-direction:column;
+      line-height:1;
+    }
+    .brand .title h1{
+      margin:0;
+      font-size:1.05rem;
+      color:var(--text);
+    }
+    .brand .title p{
+      margin:0;
+      font-size:0.78rem;
+      color:var(--muted);
     }
 
-    header h1 {
-      font-size: 2.2rem;
-      margin-bottom: 0.75rem;
+    .social{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .icon-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:40px;
+      height:40px;
+      border-radius:10px;
+      background:var(--white);
+      border:1px solid rgba(7,38,58,0.06);
+      color:var(--text);
+      text-decoration:none;
+      box-shadow: 0 4px 12px rgba(7,38,58,0.06);
+    }
+    .icon-btn:hover{transform:translateY(-2px)}
+
+    /* Page layout */
+    .container{
+      max-width:1120px;
+      margin:28px auto;
+      padding:0 20px 80px;
     }
 
-    header p {
-      color: var(--muted);
-      max-width: 720px;
-      margin: 0 auto;
+    header{
+      display:flex;
+      align-items:center;
+      gap:20px;
+      margin-bottom:18px;
     }
 
-    main {
-      max-width: 1100px;
-      margin: 3rem auto;
-      padding: 0 1.5rem;
+    header .hero{
+      flex:1;
+    }
+    header h2{
+      margin:0 0 8px 0;
+      font-size:1.6rem;
+      color:var(--text);
+    }
+    header p.lead{
+      margin:0;
+      color:var(--muted);
+      font-size:0.95rem;
+      max-width:760px;
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1.5rem;
+    /* Action panel + grid */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:20px;
+      align-items:start;
     }
 
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.5rem;
+    .card{
+      background: linear-gradient(180deg,var(--panel), rgba(255,255,255,0.6));
+      border-radius:14px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      border:1px solid var(--muted-panel);
     }
 
-    .card h3 {
-      margin-bottom: 0.5rem;
+    /* form elements */
+    label{display:block;font-size:0.9rem;color:var(--muted);margin-bottom:6px}
+    input[type="text"], textarea, select {
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(7,38,58,0.06);
+      background:linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.65));
+      color:var(--text);
+      outline:none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    textarea{min-height:110px;resize:vertical}
+
+    .ticket-options{display:flex;flex-wrap:wrap;gap:8px}
+    .ticket-options label{
+      background:linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.55));
+      border:1px solid rgba(7,38,58,0.04);
+      padding:8px 12px;border-radius:10px;cursor:pointer;color:var(--text);font-weight:600;
+    }
+    .ticket-options input{display:none}
+    .ticket-options input:checked+span,
+    .ticket-options input:checked+label{
+      background:linear-gradient(180deg, var(--accent-orange-2), var(--accent-orange));
+      color:#082028;
     }
 
-    .card p {
-      color: var(--muted);
-      font-size: 0.95rem;
+    .asset-buttons{margin-top:6px;display:flex;gap:8px;flex-wrap:wrap}
+    .asset-buttons button{
+      padding:8px 10px;border-radius:10px;border:1px solid rgba(7,38,58,0.05);
+      background:transparent;color:var(--text);cursor:pointer;font-weight:600;
+    }
+    .asset-buttons button.active{
+      background:linear-gradient(90deg,var(--accent-orange-2),var(--accent-orange));
+      color:#07263a;
+      transform:translateY(-2px);
     }
 
-    .cta {
-      margin-top: 3rem;
-      text-align: center;
+    .actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+    .btn-primary{
+      background:linear-gradient(90deg,var(--accent-orange),var(--accent-orange-2));
+      color:var(--white);
+      border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;
+      box-shadow: 0 8px 18px rgba(255,159,74,0.18);
+    }
+    .btn-ghost{
+      background:transparent;border:1px solid rgba(7,38,58,0.06);color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer;
     }
 
-    .cta .button {
-      background: var(--accent);
-      color: #000;
-      border: none;
-      padding: 0.9rem 1.6rem;
-      font-size: 1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      text-decoration: none;
-      display: inline-block;
-    }
+    /* Fees panel specifics */
+    .fees-box{background:linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.45)); border-radius:10px; padding:12px; margin-top:10px; border:1px solid rgba(7,38,58,0.04)}
+    .fees-row{display:flex;justify-content:space-between;padding:8px 6px;border-bottom:1px dashed rgba(7,38,58,0.04)}
+    .fees-row:last-child{border-bottom:none}
+    .fees-row .label{color:var(--muted)}
+    .fees-row .value{font-weight:700;color:var(--text)}
 
-    .cta .button:hover {
-      opacity: 0.9;
-    }
-
-    footer {
-      margin-top: 4rem;
-      padding: 2rem 1.5rem;
-      border-top: 1px solid var(--border);
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    footer a {
-      color: var(--muted);
-      text-decoration: underline;
-    }
-
-    .disclaimer {
-      margin-top: 1rem;
-      font-size: 0.8rem;
-      color: #9ca3af;
-    }
-
-    @media (max-width: 520px) {
-      .modal { padding: 16px; }
+    /* Responsive */
+    @media (max-width:980px){
+      .grid{grid-template-columns:1fr}
+      header{flex-direction:column;align-items:flex-start;gap:10px}
     }
   </style>
 </head>
-
 <body>
-  <!-- Topbar -->
-  <div class="topbar" role="navigation" aria-label="Top social bar">
-    <div class="left">
-      <button id="about-button" class="about-btn" aria-haspopup="dialog" aria-controls="about-modal">About</button>
+  <div class="topbar" role="banner" aria-label="Topbar">
+    <div class="brand">
+      <!-- The PNG referenced below must be saved in the repo as assets/ticket.png -->
+      <img class="logo" src="assets/ticket.png" alt="accesseasy ticket logo (save as assets/ticket.png)">
+      <div class="title">
+        <h1>accesseasy</h1>
+        <p>Next-gen event payments on Solana</p>
+      </div>
     </div>
 
-    <div class="right">
-      <!-- GitHub -->
-      <a class="icon-btn" href="https://github.com/accesseasy" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 .5a12 12 0 00-3.8 23.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.6-4-1.6-.5-1.2-1.2-1.5-1.2-1.5-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 .1 1.5-.8 1.5-.8.9-1.6 2.3-1.1 2.9-.9.1-.7.4-1.1.7-1.4-2.6-.3-5.3-1.3-5.3-5.9 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.6.1-3.3 0 0 1-.3 3.3 1.2a11.4 11.4 0 016 0C17 4 18 4.3 18 4.3c.6 1.7.2 3 .1 3.3.8.9 1.2 2 1.2 3.2 0 4.6-2.7 5.6-5.3 5.9.4.3.8.9.8 1.9v2.8c0 .3.2.6.8.5A12 12 0 0012 .5z"/>
-        </svg>
-      </a>
-
-      <!-- X -->
-      <a class="icon-btn" href="https://x.com/vntlayer" target="_blank" rel="noopener noreferrer" aria-label="X">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M22.46 6c-.77.35-1.5.6-2.28.72.82-.5 1.43-1.28 1.72-2.22-.77.46-1.62.8-2.52.98A4.1 4.1 0 0016.1 4c-2.27 0-4.11 1.87-4.11 4.18 0 .33.03.66.11.97C8.28 9.02 5.11 7.13 3.02 4.47c-.36.63-.57 1.36-.57 2.15 0 1.48.73 2.78 1.85 3.54-.68 0-1.32-.2-1.88-.5v.05c0 2.07 1.45 3.8 3.37 4.2-.36.1-.74.15-1.13.15-.28 0-.55-.03-.82-.06.56 1.8 2.16 3.12 4.06 3.16-1.48 1.22-3.35 1.95-5.38 1.95-.35 0-.7-.02-1.04-.06 1.93 1.25 4.22 1.98 6.69 1.98 8.03 0 12.43-6.63 12.43-12.38v-.56C21.1 7.6 21.85 6.85 22.46 6z"/>
-        </svg>
-      </a>
-
-      <!-- Telegram dropdown -->
-      <div class="dropdown" id="telegram-dropdown">
-        <button class="icon-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="telegram-menu" title="Telegram">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M22 3L2 10.5 7.5 13l2.6-1.2L21 4.3 22 3zM8.4 14.5l-2.9 1.1 1 4c.1.4.5.7 1 .6l2.7-.9 3.4 2c.4.2.9.1 1.2-.2.2-.2.3-.5.2-.8l-1.1-5.3L8.4 14.5z"/>
-          </svg>
-        </button>
-        <div class="dropdown-menu" id="telegram-menu" role="menu" aria-label="Telegram links">
-          <a href="https://t.me/NWO_sol_token_official" target="_blank" rel="noopener noreferrer" role="menuitem">Night Watching Owl (NWO) — Telegram</a>
-          <a href="https://t.me/DESPERADO_Solana" target="_blank" rel="noopener noreferrer" role="menuitem">DESPERADO — Telegram</a>
-        </div>
-      </div>
-
-      <!-- PumpFun dropdown -->
-      <div class="dropdown" id="pumpfun-dropdown">
-        <button class="icon-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="pumpfun-menu" title="PumpFun">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 2c-1.1 0-2 .9-2 2 0 .3.1.6.2.8L6 9v5h5l3.2-4.2c.3.1.6.2.9.2 1.1 0 2-.9 2-2S13.1 2 12 2zM5 20v-3l3 3H5z"/>
-          </svg>
-        </button>
-        <div class="dropdown-menu" id="pumpfun-menu" role="menu" aria-label="PumpFun links">
-          <a href="https://pump.fun/coin/HBpx1KCMhqsB5yKrZTqX747EPGTdfm8LJeUgNsbGpump" target="_blank" rel="noopener noreferrer" role="menuitem">Night Watching Owl — PumpFun</a>
-          <a href="https://pump.fun/coin/FLdtFf57DbhPWZkz2HnEd4e9PRX7enFWQq7uPDDspump" target="_blank" rel="noopener noreferrer" role="menuitem">DESPERADO — PumpFun</a>
-        </div>
-      </div>
-
-    </div>
+    <nav class="social" aria-label="Social links">
+      <a class="icon-btn" href="https://github.com/accesseasy" target="_blank" rel="noopener">GitHub</a>
+      <a class="icon-btn" href="https://x.com/vntlayer" target="_blank" rel="noopener">X</a>
+      <a class="icon-btn" href="https://t.me/NWO_sol_token_official" target="_blank" rel="noopener">TG</a>
+      <a class="icon-btn" href="https://pump.fun/coin/HBpx1KCMhqsB5yKrZTqX747EPGTdfm8LJeUgNsbGpump" target="_blank" rel="noopener">PumpFun</a>
+    </nav>
   </div>
 
-  <!-- About modal -->
-  <div id="about-modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="modal" id="about-modal" tabindex="-1" aria-labelledby="about-title">
-      <button class="modal-close" id="about-close" aria-label="Close About">&times;</button>
-      <div class="modal-header">
-        <h2 id="about-title">About accesseasy</h2>
-      </div>
-      <div class="modal-body">
-        <p>
-accesseasy is a next-generation eventlayer payment network designed to simplify how access, tickets, and payments are created and managed for live experiences. Built on the Solana blockchain, accesseasy enables event hosts to mint digital event tickets seamlessly—whether for music festivals, nightclubs, hotel events, conferences, or private venues.
-
-Through accesseasy, hosts can issue secure, verifiable tickets directly on-chain, eliminating the friction, inefficiencies, and intermediaries associated with traditional ticketing and payment systems. Each ticket functions as a digital access credential, enabling fast distribution, transparent ownership, and real-time validation at the point of entry.
-
-By leveraging Solana’s high-speed, low-cost infrastructure, accesseasy delivers instant payments, near-zero transaction fees, and a smooth user experience for both organizers and attendees. Payments settle in seconds, reducing chargebacks, fraud, and administrative overhead while giving hosts immediate control over their revenue.
-
-accesseasy is built for scale and flexibility—supporting everything from one-night club entries to large, multi-day festivals. The result is a unified eventlayer where ticketing, access control, and payments converge into a single, efficient system that is simpler, faster, and more reliable than traditional approaches.
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <div class="page-container">
+  <main class="container">
     <header>
-      <h1>Decentralized Event Ticket Payments</h1>
-      <p>
-        A Solana-based utility payment layer for the event industry.
-        Hosts generate tickets. Guests pay in crypto. No custodial wallets. No fiat handling.
-      </p>
+      <div class="hero">
+        <h2>Create events & accept crypto payments — easy, fast, secure</h2>
+        <p class="lead">Use accesseasy to mint tickets, accept payments on Solana and manage access — non-custodial and low-fee.</p>
+      </div>
+      <div style="width:120px;display:flex;align-items:center;justify-content:center">
+        <img src="assets/ticket.png" alt="ticket" style="width:110px;height:110px;border-radius:12px;box-shadow:0 12px 30px rgba(7,38,58,0.08)">
+      </div>
     </header>
 
-    <main>
-      <section class="grid">
-        <div class="card">
-          <h3>For Event Hosts</h3>
-          <p>
-            Generate ticket batches by defining quantity, price, date and location.
-            Pay generation fees using utility tokens or stablecoins.
-            Receive funds directly to your non-custodial Solana wallet.
-          </p>
+    <section class="grid">
+      <!-- Left: Main form -->
+      <div class="card" aria-labelledby="form-heading">
+        <h3 id="form-heading" style="margin-top:0">Host Dashboard</h3>
+
+        <label for="address">Address</label>
+        <input id="address" type="text" placeholder="Event address (venue)">
+
+        <label style="margin-top:10px">Number of Tickets</label>
+        <div class="ticket-options" role="radiogroup" aria-label="ticket quantities">
+          <label><input type="radio" name="tickets" value="100"><span>100</span></label>
+          <label><input type="radio" name="tickets" value="250"><span>250</span></label>
+          <label><input type="radio" name="tickets" value="500"><span>500</span></label>
+          <label><input type="radio" name="tickets" value="1000"><span>1000</span></label>
+          <label><input type="radio" name="tickets" value="2500"><span>2500</span></label>
+          <label><input type="radio" name="tickets" value="10000"><span>10000</span></label>
         </div>
 
-        <div class="card">
-          <h3>For Guests</h3>
-          <p>
-            Pay securely via Solana Pay QR code or your preferred wallet.
-            Receive a payment confirmation and receipt via email.
-            Tickets are delivered separately by the event host.
-          </p>
+        <label style="margin-top:12px">Payment Asset</label>
+        <div class="asset-buttons" role="group" aria-label="Payment assets">
+          <button type="button" data-asset="USDC">USDC</button>
+          <button type="button" data-asset="EURC">EURC</button>
+          <button type="button" data-asset="NWO">NWO</button>
+          <button type="button" data-asset="DESPERADO">DESPERADO</button>
         </div>
 
-        <div class="card">
-          <h3>Payment Assets</h3>
-          <p>
-            Supported assets include community-driven utility tokens and
-            EURC or USDC stablecoins, depending on the event region.
-            Live SOL price conversion is applied at checkout.
-          </p>
-        </div>
-
-        <div class="card">
-          <h3>Compliance & Privacy</h3>
-          <p>
-            GDPR-aware by design. Minimal data collection.
-            No KYC. No wallet custody. Email data is used solely for payment confirmation.
-          </p>
-        </div>
-      </section>
-
-      <div class="cta">
-        <a id="host-dashboard" class="button" href="/dashboard">
-          Host Dashboard (Coming Soon)
-        </a>
-        <div class="disclaimer">
-          This platform does not issue tickets and does not hold user funds.
-          Smart contract settlement occurs directly on the Solana blockchain.
+        <div class="actions">
+          <button class="btn-primary" id="save-event">Save Event</button>
+          <button class="btn-ghost" id="reset">Reset</button>
         </div>
       </div>
-    </main>
 
-    <footer>
-      <div>
-        © 2025 – Decentralized Event Payments
-      </div>
-      <div class="disclaimer">
-        This website is a non-custodial software interface. No financial advice is provided.
-        By using this service you acknowledge blockchain transaction risks.
-        <br/>
-        <a href="#">Privacy Policy</a> · <a href="#">Terms of Service</a>
-      </div>
-    </footer>
-  </div>
+      <!-- Right: Fees -->
+      <aside class="card" aria-labelledby="fees-heading">
+        <h3 id="fees-heading" style="margin-top:0">Fees & Conversions</h3>
+
+        <div class="fees-box" role="status" aria-live="polite">
+          <div class="fees-row"><div class="label">Platform Fee</div><div class="value" id="platform-fee">—</div></div>
+          <div class="fees-row"><div class="label">Total Fee</div><div class="value" id="total-fee">—</div></div>
+          <div class="fees-row"><div class="label" id="asset-amt-label">Amount in selected asset</div><div class="value" id="asset-amt">t.b.a</div></div>
+
+          <div style="margin-top:10px">
+            <div class="token-row"><div class="token-name">SOL price (USD)</div><div class="token-value" id="sol-usd">—</div></div>
+            <div class="token-row"><div class="token-name">DESPERADO</div><div class="token-value" id="tok1-amt">—</div></div>
+            <div class="token-row"><div class="token-name">NWO</div><div class="token-value" id="tok2-amt">—</div></div>
+            <div class="small" style="margin-top:8px">Live conversions update automatically when you select tickets or a payment asset.</div>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
 
   <script>
-    // Dropdown toggles and outside click close
-    document.addEventListener('click', function (e) {
-      const telegramRoot = document.getElementById('telegram-dropdown');
-      const telegramBtn = telegramRoot.querySelector('button');
-      const pumpfunRoot = document.getElementById('pumpfun-dropdown');
-      const pumpfunBtn = pumpfunRoot.querySelector('button');
+    // Basic interactive logic (keeps behavior inline with the new styling)
+    (function(){
+      const FEE_TABLE = { "100":0.3,"250":0.55,"500":1.0,"1000":1.8,"2500":3.0,"10000":9.0 };
+      const COINGECKO_CONTRACT_API = 'https://api.coingecko.com/api/v3/coins/solana/contract/';
+      const COINGECKO_SIMPLE = 'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd';
 
-      function closeAll() {
-        telegramRoot.classList.remove('open');
-        telegramBtn.setAttribute('aria-expanded', 'false');
-        pumpfunRoot.classList.remove('open');
-        pumpfunBtn.setAttribute('aria-expanded', 'false');
+      const ticketRadios = Array.from(document.querySelectorAll('input[name="tickets"]'));
+      const assetButtons = Array.from(document.querySelectorAll('.asset-buttons button'));
+      const platformFeeEl = document.getElementById('platform-fee');
+      const totalFeeEl = document.getElementById('total-fee');
+      const assetAmtEl = document.getElementById('asset-amt');
+      const assetAmtLabel = document.getElementById('asset-amt-label');
+      const solUsdEl = document.getElementById('sol-usd');
+      const tok1El = document.getElementById('tok1-amt');
+      const tok2El = document.getElementById('tok2-amt');
+
+      // Known contracts for USDC/EURC (as requested)
+      const USDC_CONTRACT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+      const EURC_CONTRACT = 'HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr';
+
+      let selectedTicket = null;
+      let totalSOL = 0;
+      let selectedAsset = null;
+
+      function fmtSOL(s){ return s.toFixed(6) + ' SOL'; }
+      function safeFmt(n){ if(n==null || !isFinite(n)) return 't.b.a'; return Number(n.toFixed(6)).toString(); }
+
+      function updateFeesUI(){
+        const sel = ticketRadios.find(r=>r.checked);
+        if(!sel){ platformFeeEl.textContent='—'; totalFeeEl.textContent='—'; assetAmtEl.textContent='t.b.a'; selectedTicket=null; totalSOL=0; return; }
+        selectedTicket = sel.value;
+        totalSOL = FEE_TABLE[selectedTicket];
+        platformFeeEl.textContent = fmtSOL(totalSOL);
+        totalFeeEl.textContent = fmtSOL(totalSOL);
+        updateConversions();
       }
 
-      if (telegramBtn.contains(e.target)) {
-        e.preventDefault();
-        const isOpen = telegramRoot.classList.toggle('open');
-        telegramBtn.setAttribute('aria-expanded', String(isOpen));
-        pumpfunRoot.classList.remove('open');
-        pumpfunBtn.setAttribute('aria-expanded', 'false');
-        return;
+      async function fetchSolUsd(){
+        try{
+          const res = await fetch(COINGECKO_SIMPLE);
+          const j = await res.json();
+          return j?.solana?.usd ?? null;
+        }catch(e){ return null; }
+      }
+      async function fetchTokenUsdByContract(contract){
+        try{
+          const res = await fetch(COINGECKO_CONTRACT_API + encodeURIComponent(contract));
+          if(!res.ok) return null;
+          const j = await res.json();
+          return j?.market_data?.current_price?.usd ?? null;
+        }catch(e){ return null; }
       }
 
-      if (pumpfunBtn.contains(e.target)) {
-        e.preventDefault();
-        const isOpen = pumpfunRoot.classList.toggle('open');
-        pumpfunBtn.setAttribute('aria-expanded', String(isOpen));
-        telegramRoot.classList.remove('open');
-        telegramBtn.setAttribute('aria-expanded', 'false');
-        return;
-      }
+      async function updateConversions(){
+        solUsdEl.textContent = 'Loading...';
+        tok1El.textContent = 'Loading...';
+        tok2El.textContent = 'Loading...';
+        assetAmtEl.textContent = 't.b.a';
 
-      if (!telegramRoot.contains(e.target) && !pumpfunRoot.contains(e.target)) {
-        closeAll();
-      }
-    });
+        const solUsd = await fetchSolUsd();
+        if(solUsd) solUsdEl.textContent = '$' + Number(solUsd).toFixed(2);
+        else solUsdEl.textContent = 'N/A';
 
-    // Close dropdowns on Escape
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        const telegramRoot = document.getElementById('telegram-dropdown');
-        const pumpfunRoot = document.getElementById('pumpfun-dropdown');
-        const telegramBtn = telegramRoot.querySelector('button');
-        const pumpfunBtn = pumpfunRoot.querySelector('button');
-        telegramRoot.classList.remove('open');
-        telegramBtn.setAttribute('aria-expanded', 'false');
-        pumpfunRoot.classList.remove('open');
-        pumpfunBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
-
-    // About modal logic
-    (function() {
-      const aboutBtn = document.getElementById('about-button');
-      const overlay = document.getElementById('about-modal-overlay');
-      const modal = document.getElementById('about-modal');
-      const closeBtn = document.getElementById('about-close');
-
-      function openModal() {
-        overlay.style.display = 'flex';
-        overlay.setAttribute('aria-hidden', 'false');
-        // focus close button for keyboard users
-        setTimeout(() => closeBtn.focus(), 50);
-        // prevent body scroll
-        document.body.style.overflow = 'hidden';
-      }
-
-      function closeModal() {
-        overlay.style.display = 'none';
-        overlay.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-        aboutBtn.focus();
-      }
-
-      aboutBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        openModal();
-      });
-
-      closeBtn.addEventListener('click', function () {
-        closeModal();
-      });
-
-      // close when clicking outside modal content
-      overlay.addEventListener('click', function (e) {
-        if (e.target === overlay) closeModal();
-      });
-
-      // close on Escape
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && overlay.style.display === 'flex') {
-          closeModal();
+        if(!selectedTicket || !totalSOL){
+          tok1El.textContent = 't.b.a';
+          tok2El.textContent = 't.b.a';
+          return;
         }
+
+        // For DESPERADO/NWO we keep placeholder behavior (you can hook Jupiter here)
+        tok1El.textContent = 't.b.a';
+        tok2El.textContent = 't.b.a';
+
+        // If selected asset is USDC/EURC calculate amount in that stablecoin
+        if(selectedAsset === 'USDC'){
+          assetAmtLabel.textContent = 'Amount in USDC';
+          const tokenUsd = await fetchTokenUsdByContract(USDC_CONTRACT);
+          if(!tokenUsd || !solUsd){ assetAmtEl.textContent = 't.b.a'; return; }
+          const amount = (totalSOL * solUsd) / tokenUsd;
+          assetAmtEl.textContent = safeFmt(amount);
+          return;
+        }
+        if(selectedAsset === 'EURC'){
+          assetAmtLabel.textContent = 'Amount in EURC';
+          const tokenUsd = await fetchTokenUsdByContract(EURC_CONTRACT);
+          if(!tokenUsd || !solUsd){ assetAmtEl.textContent = 't.b.a'; return; }
+          const amount = (totalSOL * solUsd) / tokenUsd;
+          assetAmtEl.textContent = safeFmt(amount);
+          return;
+        }
+
+        // otherwise
+        assetAmtLabel.textContent = 'Amount in selected asset';
+        assetAmtEl.textContent = 't.b.a';
+      }
+
+      // wire interactions
+      ticketRadios.forEach(r=>r.addEventListener('change', updateFeesUI));
+      assetButtons.forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          assetButtons.forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedAsset = btn.dataset.asset;
+          updateConversions();
+        });
       });
+
+      document.getElementById('reset').addEventListener('click', ()=>{
+        document.getElementById('event-form').reset();
+        assetButtons.forEach(b=>b.classList.remove('active'));
+        selectedAsset = null;
+        platformFeeEl.textContent='—'; totalFeeEl.textContent='—'; assetAmtEl.textContent='t.b.a'; solUsdEl.textContent='—';
+        selectedTicket = null; totalSOL = 0;
+      });
+
+      // initialize if a ticket was preselected
+      updateFeesUI();
+
     })();
   </script>
 </body>
