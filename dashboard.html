@@ -112,6 +112,7 @@
             <div id="fees-content">
               <div class="fees-row"><div>Platform Fee (includes service)</div><div id="platform-fee">—</div></div>
               <div class="fees-row"><div>Total Fee</div><div id="total-fee">—</div></div>
+              <div class="fees-row"><div id="asset-amt-label">Amount in selected asset</div><div id="asset-amt">t.b.a</div></div>
             </div>
 
             <div class="converter">
@@ -180,6 +181,10 @@
         'NWO':       'HBpx1KCMhqsB5yKrZTqX747EPGTdfm8LJeUgNsbG'
       };
 
+      // Add USDC / EURC contract addresses for CoinGecko lookup (as requested)
+      const COINGECKO_USDC_CONTRACT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+      const COINGECKO_EURC_CONTRACT = 'HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr';
+
       const mintToLabel = {};
       Object.entries(tokenLookup).forEach(([label, mint]) => {
         mintToLabel[mint] = label;
@@ -195,6 +200,8 @@
       const ticketRadios = Array.from(document.querySelectorAll('input[name="tickets"]'));
       const platformFeeEl = document.getElementById('platform-fee');
       const totalFeeEl = document.getElementById('total-fee');
+      const assetAmtLabel = document.getElementById('asset-amt-label');
+      const assetAmtEl = document.getElementById('asset-amt');
       const connectBtn = document.getElementById('connect-wallet');
       const payBtn = document.getElementById('pay-fees');
       const walletStatus = document.getElementById('wallet-status');
@@ -216,6 +223,7 @@
       let connected = false;
       let selectedTicket = null;
       let totalSOL = 0;
+      let selectedAsset = null;
 
       // token list & decimals cache
       let tokenList = null;
@@ -234,6 +242,7 @@
         if (!sel) {
           platformFeeEl.textContent = '—';
           totalFeeEl.textContent = '—';
+          assetAmtEl.textContent = 't.b.a';
           payBtn.disabled = true;
           selectedTicket = null;
           totalSOL = 0;
@@ -308,22 +317,20 @@
       }
 
       // Fallback: try CoinGecko contract endpoint to retrieve token price (USD).
-      async function quoteViaCoinGecko(tokenMint, solAmount, solUsd) {
+      async function fetchTokenUsdFromCoingecko(contractAddress) {
         try {
-          if (!solAmount || solAmount <= 0 || !solUsd) return null;
-          const url = COINGECKO_CONTRACT_API + encodeURIComponent(tokenMint);
+          if (!contractAddress) return null;
+          const url = COINGECKO_CONTRACT_API + encodeURIComponent(contractAddress);
           const res = await fetch(url);
           if (!res.ok) {
-            console.warn('CoinGecko contract lookup failed for', tokenMint, res.status);
+            console.warn('CoinGecko contract lookup failed for', contractAddress, res.status);
             return null;
           }
           const json = await res.json();
           const tokenUsd = json?.market_data?.current_price?.usd;
-          if (!tokenUsd) return null;
-          const tokenAmount = (solAmount * solUsd) / tokenUsd;
-          return tokenAmount;
+          return tokenUsd ?? null;
         } catch (err) {
-          console.warn('quoteViaCoinGecko error', err);
+          console.warn('fetchTokenUsdFromCoingecko error', err);
           return null;
         }
       }
@@ -339,11 +346,12 @@
         }
       }
 
-      // update conversions: try Jupiter, then fallback to CoinGecko
+      // update conversions: token quotes + asset conversion
       async function updateConversions() {
         solUsdEl.textContent = 'Loading...';
         tok1El.textContent = 'Loading...';
         tok2El.textContent = 'Loading...';
+        assetAmtEl.textContent = 't.b.a';
 
         const solUsd = await fetchSolUsd();
         if (solUsd) solUsdEl.textContent = '$' + Number(solUsd).toFixed(2);
@@ -352,6 +360,7 @@
         if (!selectedTicket || !totalSOL) {
           tok1El.textContent = 't.b.a';
           tok2El.textContent = 't.b.a';
+          assetAmtEl.textContent = 't.b.a';
           return;
         }
 
@@ -366,8 +375,14 @@
 
         // for any null, try coingecko fallback (needs solUsd)
         const [c1, c2] = await Promise.all([
-          j1 === null && solUsd ? quoteViaCoinGecko(mint1, totalSOL, solUsd) : null,
-          j2 === null && solUsd ? quoteViaCoinGecko(mint2, totalSOL, solUsd) : null
+          j1 === null && solUsd ? (async () => {
+            const tokenUsd = await fetchTokenUsdFromCoingecko(mint1);
+            return tokenUsd ? (totalSOL * solUsd / tokenUsd) : null;
+          })() : null,
+          j2 === null && solUsd ? (async () => {
+            const tokenUsd = await fetchTokenUsdFromCoingecko(mint2);
+            return tokenUsd ? (totalSOL * solUsd / tokenUsd) : null;
+          })() : null
         ]);
 
         const final1 = j1 !== null ? j1 : (c1 !== null ? c1 : null);
@@ -376,9 +391,45 @@
         tok1El.textContent = final1 !== null ? `${fmtToken(final1)} ${mintToLabel[mint1] ?? ''}` : 't.b.a';
         tok2El.textContent = final2 !== null ? `${fmtToken(final2)} ${mintToLabel[mint2] ?? ''}` : 't.b.a';
 
+        // show total fee in USD if possible
         if (solUsd) {
           const usd = (totalSOL * solUsd).toFixed(2);
           totalFeeEl.textContent = fmtSOL(totalSOL) + ' (' + '$' + usd + ')';
+        }
+
+        // Asset-specific conversion for USDC / EURC
+        updateAssetConversion(solUsd);
+      }
+
+      // compute amount in selected asset (USDC/EURC) and display in fees area
+      async function updateAssetConversion(solUsd) {
+        const container = document.querySelector('.asset-buttons');
+        selectedAsset = container ? container.dataset.selectedAsset : null;
+        if (!selectedAsset || !selectedTicket || !totalSOL) {
+          assetAmtEl.textContent = 't.b.a';
+          return;
+        }
+
+        if (selectedAsset === 'USDC' || selectedAsset === 'EURC') {
+          // choose contract address
+          const contract = selectedAsset === 'USDC' ? COINGECKO_USDC_CONTRACT : COINGECKO_EURC_CONTRACT;
+          // fetch token USD price
+          const tokenUsd = await fetchTokenUsdFromCoingecko(contract);
+          // ensure we have solUsd
+          const currentSolUsd = solUsd ?? await fetchSolUsd();
+          if (!tokenUsd || !currentSolUsd) {
+            assetAmtEl.textContent = 't.b.a';
+            return;
+          }
+          // amount_in_asset = totalSOL * SOL_USD / token_USD
+          const amount = (totalSOL * currentSolUsd) / tokenUsd;
+          assetAmtLabel.textContent = `Amount in ${selectedAsset}`;
+          assetAmtEl.textContent = Number(amount.toFixed(6)).toString();
+          return;
+        } else {
+          // For other assets, we fallback to Jupiter/CoinGecko-based token conversions already displayed separately
+          assetAmtLabel.textContent = 'Amount in selected asset';
+          assetAmtEl.textContent = 't.b.a';
         }
       }
 
@@ -477,15 +528,17 @@
         }
       });
 
-      // Asset buttons fix: event delegation ensures clicks work
+      // Asset buttons fix: event delegation ensures clicks work and updates asset conversion
       (function wireAssetButtons(){
         const container = document.querySelector('.asset-buttons');
-        container.addEventListener('click', (e) => {
+        container.addEventListener('click', async (e) => {
           const btn = e.target.closest('button[data-asset]');
           if (!btn) return;
           container.querySelectorAll('button[data-asset]').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           container.dataset.selectedAsset = btn.getAttribute('data-asset');
+          // update conversions for the newly selected asset
+          updateConversions();
         });
       })();
 
@@ -494,6 +547,7 @@
         document.getElementById('event-form').reset();
         platformFeeEl.textContent = '—';
         totalFeeEl.textContent = '—';
+        assetAmtEl.textContent = 't.b.a';
         tok1El.textContent = '—';
         tok2El.textContent = '—';
         solUsdEl.textContent = '—';
@@ -501,6 +555,9 @@
         walletStatus.textContent = connected ? 'Connected' : 'Not connected';
         selectedTicket = null;
         totalSOL = 0;
+        selectedAsset = null;
+        const container = document.querySelector('.asset-buttons');
+        if (container) container.dataset.selectedAsset = '';
       });
 
       // initialize: pre-load token list and try to show conversions when page loads
