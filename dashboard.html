@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Host Dashboard — accesseasy</title>
+
   <style>
     :root{--bg:#0b0f14;--card:#121826;--accent:#f7931a;--text:#e5e7eb;--muted:#9ca3af;--border:#1f2937}
     *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu}
@@ -13,21 +14,31 @@
     p.lead{color:var(--muted);margin-bottom:1.5rem}
     .dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
     .card{background:var(--card);border:1px solid var(--border);padding:1rem;border-radius:10px;position:relative}
+    .card h2{font-size:1.05rem;margin-bottom:0.75rem}
     label{display:block;font-size:0.9rem;margin-bottom:0.35rem;color:var(--muted)}
-    input[type="text"], select, textarea{width:100%;padding:0.5rem;border-radius:6px;border:1px solid #26303a;background:#0f1418;color:var(--text)}
+    input[type="text"], input[type="time"], textarea, select{width:100%;padding:0.5rem;border-radius:6px;border:1px solid #26303a;background:#0f1418;color:var(--text)}
+    textarea{min-height:100px;resize:vertical}
     .ticket-options{display:flex;flex-wrap:wrap;gap:0.5rem}
     .ticket-options label{background:#0f1418;padding:0.45rem 0.65rem;border-radius:6px;border:1px solid #26303a;cursor:pointer;user-select:none}
     .ticket-options input{display:none}
     .ticket-options input:checked+span{background:var(--accent);color:#000;padding:0.45rem 0.65rem;border-radius:6px}
     .asset-buttons{display:flex;gap:0.5rem;flex-wrap:wrap;z-index:3;position:relative}
-    .asset-buttons button{background:#0f1418;color:var(--text);border:1px solid #26303a;padding:0.5rem 0.75rem;border-radius:6px;cursor:pointer}
+    .asset-buttons button{background:#0f1418;color:var(--text);border:1px solid #26303a;padding:0.5rem 0.75rem;border-radius:6px;cursor:pointer;position:relative;z-index:4}
     .asset-buttons button.active{background:var(--accent);color:#000}
-    .fees-box{background:#0e1620;border:1px solid #26303a;padding:0.8rem;border-radius:8px;margin-top:12px}
+    .actions{margin-top:1rem;display:flex;gap:0.5rem}
+    .actions button.primary{background:var(--accent);color:#000;border:none;padding:0.6rem 1rem;border-radius:6px;cursor:pointer}
+    .actions button.secondary{background:transparent;border:1px solid #26303a;color:var(--muted);padding:0.6rem 1rem;border-radius:6px;cursor:pointer}
+    .small{font-size:0.85rem;color:var(--muted);margin-top:0.5rem}
+    .fees-box{background:#0e1620;border:1px solid #26303a;padding:0.8rem;border-radius:8px}
     .fees-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.02)}
-    .token-row{display:flex;justify-content:space-between;padding:6px 0}
-    .token-name{color:var(--muted)}
-    .token-value{color:var(--text);font-weight:700}
-    .small{font-size:0.85rem;color:var(--muted)}
+    .fees-row strong{color:var(--text)}
+    .center{display:flex;align-items:center;gap:8px}
+    .converter { margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.03) }
+    .token-row { display:flex; justify-content:space-between; gap: 12px; align-items:center; padding:6px 0; }
+    .token-name { color: var(--muted); font-size:0.95rem; }
+    .token-value { color: var(--text); font-weight:700; }
+    /* ensure no overlay prevents clicks */
+    .card::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -38,20 +49,40 @@
     <form id="event-form">
       <div class="dashboard-grid">
 
-        <section class="card">
-          <h2>Number of Tickets</h2>
-          <div class="ticket-options" role="radiogroup" aria-label="Ticket quantities">
-            <label><input type="radio" name="tickets" value="100"><span>100 Tickets</span></label>
-            <label><input type="radio" name="tickets" value="250"><span>250 Tickets</span></label>
-            <label><input type="radio" name="tickets" value="500"><span>500 Tickets</span></label>
-            <label><input type="radio" name="tickets" value="1000"><span>1000 Tickets</span></label>
-            <label><input type="radio" name="tickets" value="2500"><span>2500 Tickets</span></label>
-            <label><input type="radio" name="tickets" value="10000"><span>10000 Tickets</span></label>
-          </div>
+        <!-- Location Card -->
+        <section class="card" aria-labelledby="location-heading">
+          <h2 id="location-heading">Location</h2>
+          <label for="address">Address</label>
+          <input type="text" id="address" name="address" placeholder="123 Main St" />
+          <label for="city">City</label>
+          <input type="text" id="city" name="city" placeholder="Berlin" />
+          <label for="postal">Postal Code</label>
+          <input type="text" id="postal" name="postal" placeholder="10115" />
+          <label for="time">Time</label>
+          <input type="time" id="time" name="time" />
+          <label for="description">Event Description</label>
+          <textarea id="description" name="description" placeholder="Short description of your event"></textarea>
         </section>
 
-        <section class="card">
-          <h2>Price & Fees</h2>
+        <!-- Number of Tickets Card -->
+        <section class="card" aria-labelledby="tickets-heading">
+          <h2 id="tickets-heading">Number of Tickets</h2>
+
+          <div class="ticket-options" role="radiogroup" aria-label="Ticket quantities">
+            <label><input type="radio" name="tickets" value="100" /><span>100 Tickets</span></label>
+            <label><input type="radio" name="tickets" value="250" /><span>250 Tickets</span></label>
+            <label><input type="radio" name="tickets" value="500" /><span>500 Tickets</span></label>
+            <label><input type="radio" name="tickets" value="1000" /><span>1000 Tickets</span></label>
+            <label><input type="radio" name="tickets" value="2500" /><span>2500 Tickets</span></label>
+            <label><input type="radio" name="tickets" value="10000" /><span>10000 Tickets</span></label>
+          </div>
+
+          <div class="small" style="margin-top:8px">Choose the total number of tickets you will mint for this event.</div>
+        </section>
+
+        <!-- Price & Fees Card -->
+        <section class="card" aria-labelledby="price-heading">
+          <h2 id="price-heading">Price & Fees</h2>
 
           <label>Payment Asset</label>
           <div class="asset-buttons" role="group" aria-label="Payment assets">
@@ -61,25 +92,59 @@
             <button type="button" data-asset="DESPERADO">DESPERADO</button>
           </div>
 
-          <label style="margin-top:0.75rem">Network</label>
-          <select id="network"><option value="devnet" selected>Devnet (test)</option><option value="mainnet">Mainnet</option></select>
+          <label for="price-amount" style="margin-top:0.75rem">Price amount</label>
+          <input type="text" id="price-amount" name="price" placeholder="e.g. 20.00" inputmode="decimal" />
 
-          <div class="fees-box" aria-live="polite">
-            <div class="small" style="font-weight:700;margin-bottom:6px">Fees (selected ticket quantity)</div>
-            <div class="fees-row"><div>Platform Fee</div><div id="platform-fee">—</div></div>
-            <div class="fees-row"><div>Total Fee</div><div id="total-fee">—</div></div>
-            <div class="fees-row"><div id="asset-amt-label">Amount in selected asset</div><div id="asset-amt">t.b.a</div></div>
+          <div class="small" style="margin-top:0.75rem">Select the asset and enter the ticket price. Supported assets are shown above.</div>
 
-            <div style="margin-top:8px">
-              <div class="token-row"><div class="token-name">SOL price (USD)</div><div class="token-value" id="sol-usd">—</div></div>
-              <div class="token-row"><div class="token-name">EURC (contract)</div><div class="token-value" id="euro-contract">HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr</div></div>
-              <div class="small">If EURC selected, "Amount in selected asset" shows live EURC amount for the total platform fee.</div>
+          <hr style="border-color:rgba(255,255,255,0.03);margin:12px 0"/>
+
+          <div>
+            <label for="network">Network</label>
+            <select id="network" style="margin-top:6px">
+              <option value="devnet" selected>Devnet (test)</option>
+              <option value="mainnet">Mainnet (real SOL)</option>
+            </select>
+          </div>
+
+          <div style="margin-top:12px" class="fees-box" aria-live="polite">
+            <div style="font-weight:700;margin-bottom:6px">Fees (selected ticket quantity)</div>
+            <div id="fees-content">
+              <div class="fees-row"><div>Platform Fee (includes service)</div><div id="platform-fee">—</div></div>
+              <div class="fees-row"><div>Total Fee</div><div id="total-fee">—</div></div>
+              <div class="fees-row"><div id="asset-amt-label">Amount in selected asset</div><div id="asset-amt">t.b.a</div></div>
             </div>
 
-            <div style="margin-top:10px">
-              <button type="button" id="connect-wallet">Connect Wallet</button>
-              <button type="button" id="pay-fees" disabled>Pay Fees</button>
-              <div id="wallet-status" class="small">Not connected</div>
+            <div class="converter">
+              <div style="font-weight:700;margin-bottom:6px">Live conversion</div>
+              <div class="token-row">
+                <div class="token-name">SOL price (USD)</div>
+                <div class="token-value" id="sol-usd">—</div>
+              </div>
+
+              <div class="token-row">
+                <div class="token-name" id="tok1-label">DESPERADO</div>
+                <div class="token-value" id="tok1-amt">—</div>
+              </div>
+
+              <div class="token-row">
+                <div class="token-name" id="tok2-label">NWO</div>
+                <div class="token-value" id="tok2-amt">—</div>
+              </div>
+
+              <div class="small" style="margin-top:8px;color:var(--muted)">
+                Conversion via Jupiter API → fallback CoinGecko (if Jupiter unavailable). If no route or price, value shown as "t.b.a".
+              </div>
+            </div>
+
+            <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+              <button type="button" id="connect-wallet" class="primary">Connect Wallet</button>
+              <button type="button" id="pay-fees" class="primary" disabled>Pay Fees</button>
+              <div class="small" id="wallet-status" style="margin-left:8px">Not connected</div>
+            </div>
+
+            <div class="small" style="margin-top:8px;color:var(--muted)">
+              Receiver address: <code style="color:#fff">UkG6htp8SmC4ukEVGXFbhngiKo86cquYupKha36FfFE</code>
             </div>
 
             <div id="tx-status" class="small" style="margin-top:8px"></div>
@@ -88,129 +153,422 @@
 
       </div>
 
-      <div style="margin-top:1rem">
-        <button type="submit">Save Event</button>
-        <button type="button" id="reset">Reset</button>
+      <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+        <button class="primary" type="submit">Save Event</button>
+        <button class="secondary" type="button" id="reset">Reset</button>
       </div>
     </form>
   </div>
 
+  <!-- Solana web3 (IIFE build) -->
   <script src="https://unpkg.com/@solana/web3.js@1.73.0/lib/index.iife.js"></script>
+
   <script>
-    (function(){
-      const FEE_TABLE = { "100":0.3,"250":0.55,"500":1.0,"1000":1.8,"2500":3.0,"10000":9.0 };
+    (function () {
+      // Platform fees in SOL
+      const FEE_TABLE = {
+        "100":   0.3,
+        "250":   0.55,
+        "500":   1.0,
+        "1000":  1.8,
+        "2500":  3.0,
+        "10000": 9.0
+      };
+
+      // Normalized mints (pump suffix removed)
+      const tokenLookup = {
+        'DESPERADO': 'FLdtFf57DbhPWZkz2HnEd4e9PRX7enFWQq7uPDDs',
+        'NWO':       'HBpx1KCMhqsB5yKrZTqX747EPGTdfm8LJeUgNsbG'
+      };
+
+      // Add USDC / EURC contract addresses for CoinGecko lookup (as requested)
+      const COINGECKO_USDC_CONTRACT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+      const COINGECKO_EURC_CONTRACT = 'HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr';
+
+      const mintToLabel = {};
+      Object.entries(tokenLookup).forEach(([label, mint]) => {
+        mintToLabel[mint] = label;
+      });
+
+      const W_SOL_MINT = 'So11111111111111111111111111111111111111112';
+      const JUPITER_TOKEN_LIST = 'https://cache.jup.ag/tokens';
+      const JUPITER_QUOTE_API = 'https://quote-api.jup.ag/v4/quote';
       const COINGECKO_CONTRACT_API = 'https://api.coingecko.com/api/v3/coins/solana/contract/';
-      const EURC_CONTRACT = 'HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr';
       const receiverAddress = 'UkG6htp8SmC4ukEVGXFbhngiKo86cquYupKha36FfFE';
 
+      // UI refs
       const ticketRadios = Array.from(document.querySelectorAll('input[name="tickets"]'));
       const platformFeeEl = document.getElementById('platform-fee');
       const totalFeeEl = document.getElementById('total-fee');
       const assetAmtLabel = document.getElementById('asset-amt-label');
       const assetAmtEl = document.getElementById('asset-amt');
-      const solUsdEl = document.getElementById('sol-usd');
+      const connectBtn = document.getElementById('connect-wallet');
+      const payBtn = document.getElementById('pay-fees');
+      const walletStatus = document.getElementById('wallet-status');
+      const txStatus = document.getElementById('tx-status');
+      const networkSelect = document.getElementById('network');
 
+      const solUsdEl = document.getElementById('sol-usd');
+      const tok1El = document.getElementById('tok1-amt');
+      const tok2El = document.getElementById('tok2-amt');
+      const tok1LabelEl = document.getElementById('tok1-label');
+      const tok2LabelEl = document.getElementById('tok2-label');
+
+      // set friendly labels
+      const tokenNames = Object.keys(tokenLookup);
+      tok1LabelEl.textContent = tokenNames[0] || 'Token 1';
+      tok2LabelEl.textContent = tokenNames[1] || 'Token 2';
+
+      let provider = null; // wallet provider
+      let connected = false;
       let selectedTicket = null;
       let totalSOL = 0;
       let selectedAsset = null;
 
-      function fmtSOL(s){ return s.toFixed(6) + ' SOL'; }
-      function safeFmt(n){ if(n==null || !isFinite(n)) return 't.b.a'; return Number(n.toFixed(6)).toString(); }
+      // token list & decimals cache
+      let tokenList = null;
+      const tokenDecimalsCache = {};
 
-      // update fee display when ticket selection changes
-      function updateFees(){
-        const sel = ticketRadios.find(r=>r.checked);
-        if(!sel){ platformFeeEl.textContent='—'; totalFeeEl.textContent='—'; assetAmtEl.textContent='t.b.a'; selectedTicket=null; totalSOL=0; return; }
-        selectedTicket = sel.value;
-        totalSOL = FEE_TABLE[selectedTicket];
-        platformFeeEl.textContent = fmtSOL(totalSOL);
-        totalFeeEl.textContent = fmtSOL(totalSOL);
-        updateAssetAmount(); // recalc with current asset
+      function fmtSOL(sol) { return sol.toFixed(6) + ' SOL'; }
+      function fmtToken(num) {
+        if (num === null || num === undefined || Number.isNaN(num)) return 't.b.a';
+        if (!isFinite(num)) return 't.b.a';
+        return Number(num.toFixed(6)).toString();
       }
 
-      ticketRadios.forEach(r=>r.addEventListener('change', updateFees));
-
-      // asset button selection (event delegation)
-      document.querySelector('.asset-buttons').addEventListener('click', (e)=>{
-        const btn = e.target.closest('button[data-asset]');
-        if(!btn) return;
-        document.querySelectorAll('.asset-buttons button').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedAsset = btn.getAttribute('data-asset');
-        updateAssetAmount();
-      });
-
-      async function fetchSolUsd(){
-        try{
-          const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
-          const j = await res.json();
-          return j?.solana?.usd ?? null;
-        }catch(e){ return null; }
-      }
-
-      async function fetchTokenUsdByContract(contract){
-        try{
-          const res = await fetch(COINGECKO_CONTRACT_API + encodeURIComponent(contract));
-          if(!res.ok) return null;
-          const j = await res.json();
-          return j?.market_data?.current_price?.usd ?? null;
-        }catch(e){ return null; }
-      }
-
-      // main: update displayed asset amount for selected asset
-      async function updateAssetAmount(){
-        assetAmtEl.textContent = 't.b.a';
-        if(!selectedAsset || !selectedTicket || !totalSOL) return;
-
-        // always show SOL USD if possible
-        const solUsd = await fetchSolUsd();
-        if(solUsd) solUsdEl.textContent = '$' + Number(solUsd).toFixed(2);
-        else solUsdEl.textContent = 'N/A';
-
-        if(selectedAsset === 'EURC'){
-          // use CoinGecko contract endpoint for EURC
-          assetAmtLabel.textContent = 'Amount in EURC';
-          const tokenUsd = await fetchTokenUsdByContract(EURC_CONTRACT);
-          if(!tokenUsd || !solUsd){
-            assetAmtEl.textContent = 't.b.a';
-            return;
-          }
-          // amount_in_EURC = totalSOL * SOL_USD / token_USD
-          const amount = (totalSOL * solUsd) / tokenUsd;
-          assetAmtEl.textContent = safeFmt(amount);
+      // Update fees UI when selection changes
+      function updateFees() {
+        const sel = ticketRadios.find(r => r.checked);
+        if (!sel) {
+          platformFeeEl.textContent = '—';
+          totalFeeEl.textContent = '—';
+          assetAmtEl.textContent = 't.b.a';
+          payBtn.disabled = true;
+          selectedTicket = null;
+          totalSOL = 0;
+          updateConversions();
           return;
         }
+        const qty = sel.value;
+        selectedTicket = qty;
+        const platform = FEE_TABLE[qty];
+        if (platform === undefined) return;
+        totalSOL = platform;
+        platformFeeEl.textContent = fmtSOL(platform);
+        totalFeeEl.textContent = fmtSOL(totalSOL);
+        // update conversions
+        updateConversions();
+        // Pay button enabled only if wallet connected
+        payBtn.disabled = !connected;
+      }
 
-        if(selectedAsset === 'USDC'){
-          // if you want same behavior for USDC, you can add its contract and compute similarly
-          assetAmtLabel.textContent = 'Amount in USDC';
-          // not implemented here? (existing code can be extended)
+      ticketRadios.forEach(r => {
+        r.addEventListener('change', updateFees);
+      });
+
+      // Load Jupiter token list (for decimals & detection)
+      async function loadTokenList() {
+        if (tokenList) return tokenList;
+        try {
+          const res = await fetch(JUPITER_TOKEN_LIST);
+          tokenList = await res.json();
+          tokenList.forEach(t => tokenDecimalsCache[t.address] = t.decimals);
+          return tokenList;
+        } catch (err) {
+          console.warn('Failed to load Jupiter token list', err);
+          tokenList = [];
+          return tokenList;
+        }
+      }
+
+      async function getDecimals(mint) {
+        await loadTokenList();
+        return tokenDecimalsCache[mint] ?? 0;
+      }
+
+      // Attempt Jupiter quote (SOL -> token). Returns token amount or null.
+      async function quoteViaJupiter(tokenMint, solAmount) {
+        try {
+          if (!solAmount || solAmount <= 0) return null;
+          await loadTokenList();
+          const exists = tokenList.find(t => t.address === tokenMint);
+          if (!exists) {
+            console.warn('Jupiter: token not in token list:', tokenMint);
+            return null;
+          }
+          const lamports = Math.round(solAmount * 1e9);
+          const url = `${JUPITER_QUOTE_API}?inputMint=${encodeURIComponent(W_SOL_MINT)}&outputMint=${encodeURIComponent(tokenMint)}&amount=${lamports}&slippage=1`;
+          const res = await fetch(url);
+          if (!res.ok) {
+            console.warn('Jupiter quote API returned status', res.status);
+            return null;
+          }
+          const json = await res.json();
+          if (!json || !json.data || json.data.length === 0) return null;
+          const route = json.data[0];
+          const outAmountStr = route.outAmount;
+          const decimals = tokenDecimalsCache[tokenMint] ?? (await getDecimals(tokenMint));
+          const outAmount = Number(outAmountStr) / Math.pow(10, decimals);
+          return outAmount;
+        } catch (err) {
+          console.warn('quoteViaJupiter error', err);
+          return null;
+        }
+      }
+
+      // Fallback: try CoinGecko contract endpoint to retrieve token price (USD).
+      async function fetchTokenUsdFromCoingecko(contractAddress) {
+        try {
+          if (!contractAddress) return null;
+          const url = COINGECKO_CONTRACT_API + encodeURIComponent(contractAddress);
+          const res = await fetch(url);
+          if (!res.ok) {
+            console.warn('CoinGecko contract lookup failed for', contractAddress, res.status);
+            return null;
+          }
+          const json = await res.json();
+          const tokenUsd = json?.market_data?.current_price?.usd;
+          return tokenUsd ?? null;
+        } catch (err) {
+          console.warn('fetchTokenUsdFromCoingecko error', err);
+          return null;
+        }
+      }
+
+      // Fetch SOL-USD price
+      async function fetchSolUsd() {
+        try {
+          const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+          const data = await res.json();
+          return data?.solana?.usd ?? null;
+        } catch (err) {
+          return null;
+        }
+      }
+
+      // update conversions: token quotes + asset conversion
+      async function updateConversions() {
+        solUsdEl.textContent = 'Loading...';
+        tok1El.textContent = 'Loading...';
+        tok2El.textContent = 'Loading...';
+        assetAmtEl.textContent = 't.b.a';
+
+        const solUsd = await fetchSolUsd();
+        if (solUsd) solUsdEl.textContent = '$' + Number(solUsd).toFixed(2);
+        else solUsdEl.textContent = 'N/A';
+
+        if (!selectedTicket || !totalSOL) {
+          tok1El.textContent = 't.b.a';
+          tok2El.textContent = 't.b.a';
           assetAmtEl.textContent = 't.b.a';
           return;
         }
 
-        // other tokens: show t.b.a
-        assetAmtLabel.textContent = 'Amount in selected asset';
-        assetAmtEl.textContent = 't.b.a';
+        const mint1 = tokenLookup['DESPERADO'];
+        const mint2 = tokenLookup['NWO'];
+
+        // first try Jupiter for each
+        const [j1, j2] = await Promise.all([
+          quoteViaJupiter(mint1, totalSOL),
+          quoteViaJupiter(mint2, totalSOL)
+        ]);
+
+        // for any null, try coingecko fallback (needs solUsd)
+        const [c1, c2] = await Promise.all([
+          j1 === null && solUsd ? (async () => {
+            const tokenUsd = await fetchTokenUsdFromCoingecko(mint1);
+            return tokenUsd ? (totalSOL * solUsd / tokenUsd) : null;
+          })() : null,
+          j2 === null && solUsd ? (async () => {
+            const tokenUsd = await fetchTokenUsdFromCoingecko(mint2);
+            return tokenUsd ? (totalSOL * solUsd / tokenUsd) : null;
+          })() : null
+        ]);
+
+        const final1 = j1 !== null ? j1 : (c1 !== null ? c1 : null);
+        const final2 = j2 !== null ? j2 : (c2 !== null ? c2 : null);
+
+        tok1El.textContent = final1 !== null ? `${fmtToken(final1)} ${mintToLabel[mint1] ?? ''}` : 't.b.a';
+        tok2El.textContent = final2 !== null ? `${fmtToken(final2)} ${mintToLabel[mint2] ?? ''}` : 't.b.a';
+
+        // show total fee in USD if possible
+        if (solUsd) {
+          const usd = (totalSOL * solUsd).toFixed(2);
+          totalFeeEl.textContent = fmtSOL(totalSOL) + ' (' + '$' + usd + ')';
+        }
+
+        // Asset-specific conversion for USDC / EURC
+        updateAssetConversion(solUsd);
       }
 
-      // initialize
-      ticketRadios.forEach(r => { if(r.checked) updateFees(); });
-      // ensure SOL price shown on load
-      fetchSolUsd().then(s=>{ if(s) solUsdEl.textContent = '$' + Number(s).toFixed(2); });
+      // compute amount in selected asset (USDC/EURC) and display in fees area
+      async function updateAssetConversion(solUsd) {
+        const container = document.querySelector('.asset-buttons');
+        selectedAsset = container ? container.dataset.selectedAsset : null;
+        if (!selectedAsset || !selectedTicket || !totalSOL) {
+          assetAmtEl.textContent = 't.b.a';
+          return;
+        }
 
-      // reset behavior
-      document.getElementById('reset').addEventListener('click', ()=>{
+        if (selectedAsset === 'USDC' || selectedAsset === 'EURC') {
+          // choose contract address
+          const contract = selectedAsset === 'USDC' ? COINGECKO_USDC_CONTRACT : COINGECKO_EURC_CONTRACT;
+          // fetch token USD price
+          const tokenUsd = await fetchTokenUsdFromCoingecko(contract);
+          // ensure we have solUsd
+          const currentSolUsd = solUsd ?? await fetchSolUsd();
+          if (!tokenUsd || !currentSolUsd) {
+            assetAmtEl.textContent = 't.b.a';
+            return;
+          }
+          // amount_in_asset = totalSOL * SOL_USD / token_USD
+          const amount = (totalSOL * currentSolUsd) / tokenUsd;
+          assetAmtLabel.textContent = `Amount in ${selectedAsset}`;
+          assetAmtEl.textContent = Number(amount.toFixed(6)).toString();
+          return;
+        } else {
+          // For other assets, we fallback to Jupiter/CoinGecko-based token conversions already displayed separately
+          assetAmtLabel.textContent = 'Amount in selected asset';
+          assetAmtEl.textContent = 't.b.a';
+        }
+      }
+
+      // Wallet integration
+      function getProvider() {
+        if ('solana' in window) {
+          const anyWindow = window;
+          return anyWindow.solana;
+        }
+        return null;
+      }
+
+      async function connectWallet() {
+        provider = getProvider();
+        if (!provider) {
+          walletStatus.textContent = 'No Solana wallet found (install Phantom).';
+          return;
+        }
+        try {
+          await provider.connect();
+          connected = true;
+          walletStatus.textContent = 'Connected: ' + (provider.publicKey ? provider.publicKey.toString().slice(0,8) : 'wallet');
+          payBtn.disabled = !selectedTicket;
+        } catch (err) {
+          walletStatus.textContent = 'Connection rejected';
+          console.error('connect error', err);
+        }
+      }
+
+      connectBtn.addEventListener('click', async () => {
+        await connectWallet();
+      });
+
+      // Pay fees (send SOL)
+      payBtn.addEventListener('click', async () => {
+        txStatus.textContent = '';
+        if (!connected || !provider) {
+          txStatus.textContent = 'Please connect your wallet first.';
+          return;
+        }
+        if (!selectedTicket || totalSOL <= 0) {
+          txStatus.textContent = 'Please select a ticket quantity.';
+          return;
+        }
+
+        const network = networkSelect.value;
+        const connectionUrl = network === 'mainnet'
+          ? 'https://api.mainnet-beta.solana.com'
+          : 'https://api.devnet.solana.com';
+
+        const confirmed = confirm(`You are about to send ${totalSOL} SOL to ${receiverAddress} on ${network}. Continue?`);
+        if (!confirmed) return;
+
+        try {
+          txStatus.textContent = 'Preparing transaction...';
+
+          const connection = new solanaWeb3.Connection(connectionUrl, 'confirmed');
+          const fromPubkey = provider.publicKey;
+          const toPubkey = new solanaWeb3.PublicKey(receiverAddress);
+
+          // lamports conversion
+          const lamports = Math.round(totalSOL * 1e9);
+
+          const tx = new solanaWeb3.Transaction().add(
+            solanaWeb3.SystemProgram.transfer({
+              fromPubkey,
+              toPubkey,
+              lamports
+            })
+          );
+
+          tx.feePayer = fromPubkey;
+          const { blockhash } = await connection.getRecentBlockhash();
+          tx.recentBlockhash = blockhash;
+
+          txStatus.textContent = 'Requesting wallet signature...';
+
+          if (provider.signAndSendTransaction) {
+            const signed = await provider.signAndSendTransaction(tx);
+            txStatus.textContent = 'Submitted. Signature: ' + (signed.signature || signed);
+            await connection.confirmTransaction(signed.signature || signed);
+            txStatus.textContent = 'Transaction confirmed. Signature: ' + (signed.signature || signed);
+          } else if (provider.signTransaction) {
+            const signedTx = await provider.signTransaction(tx);
+            const raw = signedTx.serialize();
+            const sig = await connection.sendRawTransaction(raw);
+            txStatus.textContent = 'Submitted. Signature: ' + sig;
+            await connection.confirmTransaction(sig);
+            txStatus.textContent = 'Transaction confirmed. Signature: ' + sig;
+          } else {
+            txStatus.textContent = 'Wallet does not support sending transactions from web page.';
+          }
+        } catch (err) {
+          console.error(err);
+          txStatus.textContent = 'Transaction failed / rejected: ' + (err.message || err);
+        }
+      });
+
+      // Asset buttons fix: event delegation ensures clicks work and updates asset conversion
+      (function wireAssetButtons(){
+        const container = document.querySelector('.asset-buttons');
+        container.addEventListener('click', async (e) => {
+          const btn = e.target.closest('button[data-asset]');
+          if (!btn) return;
+          container.querySelectorAll('button[data-asset]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          container.dataset.selectedAsset = btn.getAttribute('data-asset');
+          // update conversions for the newly selected asset
+          updateConversions();
+        });
+      })();
+
+      // Reset
+      document.getElementById('reset').addEventListener('click', () => {
         document.getElementById('event-form').reset();
-        selectedAsset = null;
-        document.querySelectorAll('.asset-buttons button').forEach(b=>b.classList.remove('active'));
-        platformFeeEl.textContent='—';
-        totalFeeEl.textContent='—';
-        assetAmtEl.textContent='t.b.a';
-        solUsdEl.textContent='—';
+        platformFeeEl.textContent = '—';
+        totalFeeEl.textContent = '—';
+        assetAmtEl.textContent = 't.b.a';
+        tok1El.textContent = '—';
+        tok2El.textContent = '—';
+        solUsdEl.textContent = '—';
+        txStatus.textContent = '';
+        walletStatus.textContent = connected ? 'Connected' : 'Not connected';
         selectedTicket = null;
         totalSOL = 0;
+        selectedAsset = null;
+        const container = document.querySelector('.asset-buttons');
+        if (container) container.dataset.selectedAsset = '';
       });
+
+      // initialize: pre-load token list and try to show conversions when page loads
+      window.addEventListener('load', async () => {
+        await loadTokenList();
+        updateFees();
+      });
+    })();
+  </script>
+</body>
+</html>
 
     })();
   </script>
